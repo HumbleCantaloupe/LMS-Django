@@ -12,7 +12,7 @@
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{% url 'borrowing:dashboard' %}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'borrowing:browse' %}">Browse Books</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'borrowing:browse_books' %}">Browse Books</a></li>
                         <li class="breadcrumb-item active">Borrow</li>
                     </ol>
                 </nav>
@@ -242,7 +242,7 @@
                                     <i class="fas fa-check me-2"></i>Confirm Borrow
                                 </button>
                             </form>
-                            <a href="{% url 'borrowing:browse' %}" class="btn btn-secondary btn-lg">
+                            <a href="{% url 'borrowing:browse_books' %}" class="btn btn-secondary btn-lg">
                                 <i class="fas fa-arrow-left me-2"></i>Back to Browse
                             </a>
                         </div>

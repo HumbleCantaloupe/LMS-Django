@@ -1,6 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
 from django.db.models import Q, Count
 from django.utils import timezone
 from datetime import timedelta
@@ -36,7 +37,7 @@ class BorrowingDashboardView(LoginRequiredMixin, TemplateView):
         ).count()
         
         # Recent borrowings (last 5)
-        context['recent_borrowings'] = current_borrowings.order_by('-borrow_date')[:5]
+        context['recent_borrowings'] = current_borrowings.order_by('-borrowed_at')[:5]
         
         # Due soon (within 3 days)
         due_soon_date = today + timedelta(days=3)
@@ -77,6 +78,69 @@ class RenewBookView(LoginRequiredMixin, TemplateView):
 
 class BorrowBookView(LoginRequiredMixin, TemplateView):
     template_name = 'borrowing/borrow.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        book_copy_id = self.request.GET.get('book_copy_id')
+        if book_copy_id:
+            from books.models import BookCopy
+            try:
+                book_copy = BookCopy.objects.get(id=book_copy_id, status='available')
+                context['book_copy'] = book_copy
+            except BookCopy.DoesNotExist:
+                context['error'] = 'Book copy not found or not available.'
+        else:
+            # Show available books for borrowing
+            from books.models import BookCopy
+            context['available_copies'] = BookCopy.objects.filter(
+                status='available', 
+                book__is_active=True
+            ).select_related('book').prefetch_related('book__authors')[:20]
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        book_copy_id = request.POST.get('book_copy_id')
+        if not book_copy_id:
+            messages.error(request, 'No book copy selected for borrowing.')
+            return redirect('borrowing:borrow')
+        
+        from books.models import BookCopy
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        try:
+            book_copy = BookCopy.objects.get(id=book_copy_id, status='available')
+        except BookCopy.DoesNotExist:
+            messages.error(request, 'Book copy not found or not available.')
+            return redirect('borrowing:borrow')
+        
+        # Check if user already has this book borrowed
+        existing_transaction = BorrowTransaction.objects.filter(
+            user=request.user,
+            book_copy__book=book_copy.book,
+            status='active'
+        ).first()
+        
+        if existing_transaction:
+            messages.error(request, 'You already have this book borrowed.')
+            return redirect('borrowing:current')
+        
+        # Create the borrow transaction
+        due_date = timezone.now() + timedelta(days=14)  # 2 weeks loan period
+        
+        transaction = BorrowTransaction.objects.create(
+            user=request.user,
+            book_copy=book_copy,
+            due_date=due_date,
+            status='active'
+        )
+        
+        # Update book copy status
+        book_copy.status = 'borrowed'
+        book_copy.save()
+        
+        messages.success(request, f'Book "{book_copy.book.title}" has been borrowed successfully!')
+        return redirect('borrowing:current')
 
 class CombinedDashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'borrowing/combined_dashboard.html'

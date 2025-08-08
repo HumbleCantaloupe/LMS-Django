@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Borrow Books - Library Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2 mb-0">
+                    <i class="bi bi-book text-primary me-2"></i>
+                    Borrow Books
+                </h1>
+                <a href="{% url 'borrowing:dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+
+            {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+
+            {% if book_copy %}
+                <!-- Specific Book Copy to Borrow -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Confirm Borrowing</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                {% if book_copy.book.cover_image %}
+                                    <img src="{{ book_copy.book.cover_image.url }}" alt="{{ book_copy.book.title }}" class="img-fluid rounded">
+                                {% else %}
+                                    <div class="bg-light d-flex align-items-center justify-content-center rounded" style="height: 200px;">
+                                        <i class="bi bi-book text-muted" style="font-size: 3rem;"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-9">
+                                <h4>{{ book_copy.book.title }}</h4>
+                                <p class="text-muted mb-2">
+                                    <strong>Author(s):</strong> {{ book_copy.book.author_names }}
+                                </p>
+                                <p class="text-muted mb-2">
+                                    <strong>ISBN:</strong> {{ book_copy.book.isbn }}
+                                </p>
+                                <p class="text-muted mb-2">
+                                    <strong>Copy Number:</strong> {{ book_copy.copy_number }}
+                                </p>
+                                <p class="text-muted mb-3">
+                                    <strong>Branch:</strong> {{ book_copy.branch.name }}
+                                </p>
+                                
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="book_copy_id" value="{{ book_copy.id }}">
+                                    <button type="submit" class="btn btn-success me-2">
+                                        <i class="bi bi-check-circle me-1"></i>Confirm Borrowing
+                                    </button>
+                                    <a href="{% url 'books:book_detail' book_copy.book.id %}" class="btn btn-secondary">
+                                        <i class="bi bi-arrow-left me-1"></i>Cancel
+                                    </a>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Available Books List -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Available Books for Borrowing</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if available_copies %}
+                            <div class="row">
+                                {% for copy in available_copies %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ copy.book.title }}</h6>
+                                            <p class="card-text small text-muted mb-2">
+                                                {{ copy.book.author_names }}
+                                            </p>
+                                            <p class="card-text small">
+                                                <strong>Copy:</strong> {{ copy.copy_number }}<br>
+                                                <strong>Branch:</strong> {{ copy.branch.name }}
+                                            </p>
+                                            <div class="mt-auto">
+                                                <a href="?book_copy_id={{ copy.id }}" class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-arrow-right me-1"></i>Borrow This Copy
+                                                </a>
+                                                <a href="{% url 'books:book_detail' copy.book.id %}" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="bi bi-eye me-1"></i>View Details
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-exclamation-circle text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="mt-3 text-muted">No Books Available</h5>
+                                <p class="text-muted">There are currently no books available for borrowing.</p>
+                                <a href="{% url 'books:book_list' %}" class="btn btn-primary">
+                                    <i class="bi bi-book me-2"></i>Browse All Books
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
