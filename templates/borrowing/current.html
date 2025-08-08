@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Current Borrowings{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-book-reader me-2"></i>
+                    Current Borrowings
+                </h2>
+                <a href="{% url 'borrowing:dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if transactions %}
+        <div class="row">
+            {% for transaction in transactions %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">{{ transaction.book_copy.book.title|truncatechars:30 }}</h6>
+                        {% if transaction.is_overdue %}
+                            <span class="badge bg-danger">Overdue</span>
+                        {% elif transaction.days_until_due <= 3 %}
+                            <span class="badge bg-warning">Due Soon</span>
+                        {% else %}
+                            <span class="badge bg-success">Active</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            <strong>Author(s):</strong>
+                            {% for author in transaction.book_copy.book.authors.all %}
+                                {{ author.first_name }} {{ author.last_name }}{% if not forloop.last %}, {% endif %}
+                            {% empty %}
+                                Unknown
+                            {% endfor %}
+                        </p>
+                        <p class="card-text">
+                            <strong>ISBN:</strong> {{ transaction.book_copy.book.isbn|default:"N/A" }}
+                        </p>
+                        <p class="card-text">
+                            <strong>Borrowed:</strong> {{ transaction.borrow_date|date:"M d, Y" }}
+                        </p>
+                        <p class="card-text">
+                            <strong>Due Date:</strong> 
+                            <span class="{% if transaction.is_overdue %}text-danger{% elif transaction.days_until_due <= 3 %}text-warning{% endif %}">
+                                {{ transaction.due_date|date:"M d, Y" }}
+                            </span>
+                        </p>
+                        {% if transaction.is_overdue %}
+                            <p class="card-text text-danger">
+                                <strong>Overdue by:</strong> {{ transaction.days_overdue }} day{{ transaction.days_overdue|pluralize }}
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <div class="btn-group w-100" role="group">
+                            <a href="{% url 'borrowing:renew' transaction.id %}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-redo me-1"></i>
+                                Renew
+                            </a>
+                            <a href="{% url 'borrowing:return_confirmation' transaction.id %}" class="btn btn-success btn-sm">
+                                <i class="fas fa-undo me-1"></i>
+                                Return
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav aria-label="Current borrowings pagination">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">&laquo; First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                    </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+    {% else %}
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle fa-3x mb-3"></i>
+                    <h4>No Current Borrowings</h4>
+                    <p>You don't have any books currently borrowed.</p>
+                    <a href="{% url 'borrowing:browse_books' %}" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>
+                        Browse Books to Borrow
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

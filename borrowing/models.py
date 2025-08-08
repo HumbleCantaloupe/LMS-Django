@@ -56,6 +56,25 @@ class BorrowTransaction(models.Model):
         return (timezone.now().date() - self.due_date.date()).days
     
     @property
+    def days_until_due(self):
+        """Returns the number of days until the book is due"""
+        if self.status in ['returned', 'lost']:
+            return 0
+        days_diff = (self.due_date.date() - timezone.now().date()).days
+        return max(0, days_diff)
+    
+    @property
+    def borrow_date(self):
+        """Returns borrow date for template compatibility"""
+        return self.borrowed_at.date() if self.borrowed_at else None
+    
+    @property
+    def days_overdue(self):
+        if not self.is_overdue:
+            return 0
+        return (timezone.now().date() - self.due_date.date()).days
+    
+    @property
     def can_renew(self):
         return (self.status == 'active' and 
                 self.renewal_count < self.max_renewals_allowed and 

@@ -6,24 +6,7 @@
 {% block extra_css %}
 <style>
     .book-card {
-        transition: all                                    <!-- Publication Info -->
-                                    <div class="col-md-3">
-                                        <p class="mb-1">
-                                            <strong>Publisher:</strong><br>
-                                            {{ book.publisher.name|default:"Unknown" }}
-                                        </p>
-                                        <p class="mb-1">
-                                            <strong>Publication Date:</strong><br>
-                                            {{ book.publication_date|date:"M d, Y"|default:"Unknown" }}
-                                        </p>
-                                        <div class="mt-2">
-                                            <small class="text-muted">
-                                                <strong>Copies:</strong> 
-                                                <span class="badge bg-primary">{{ book.total_copies }}</span> total, 
-                                                <span class="badge bg-success">{{ book.available_copies }}</span> available
-                                            </small>
-                                        </div>
-                                    </div>
+        transition: all 0.3s ease;
         border-left: 4px solid #dee2e6;
     }
     

@@ -13,6 +13,35 @@
     <link rel="stylesheet" href="{% static 'css/custom.css' %}">
     
     {% block extra_css %}{% endblock %}
+    
+    <style>
+        .logout-form .dropdown-item {
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            padding: 0.25rem 1rem;
+            color: #212529;
+            text-decoration: none;
+            display: block;
+        }
+        
+        .logout-form .dropdown-item:hover {
+            background-color: #e9ecef;
+        }
+        
+        .logout-nav-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.75);
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+        }
+        
+        .logout-nav-btn:hover {
+            color: rgba(255, 255, 255, 1);
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -60,7 +89,12 @@
                             <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">Profile</a></li>
                             <li><a class="dropdown-item" href="{% url 'accounts:dashboard' %}">Dashboard</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">Logout</a></li>
+                            <li>
+                                <form method="post" action="{% url 'accounts:logout' %}" class="d-inline logout-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item logout-nav-btn">Logout</button>
+                                </form>
+                            </li>
                         </ul>
                     </li>
                     {% else %}
