@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Library Branches - Library Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2 mb-0">
+                    <i class="bi bi-building text-primary me-2"></i>
+                    Library Branches
+                </h1>
+                <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-house me-1"></i>Back to Home
+                </a>
+            </div>
+
+            {% if branches %}
+                <!-- Branches Grid -->
+                <div class="row">
+                    {% for branch in branches %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex align-items-start mb-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                            <i class="bi bi-building"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h5 class="card-title mb-1">{{ branch.name }}</h5>
+                                        <small class="text-muted">Code: {{ branch.code }}</small>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    {% if branch.address %}
+                                        <p class="text-muted mb-2">
+                                            <i class="bi bi-geo-alt me-1"></i>
+                                            {{ branch.address }}
+                                        </p>
+                                    {% endif %}
+                                    
+                                    {% if branch.phone_number %}
+                                        <p class="text-muted mb-2">
+                                            <i class="bi bi-telephone me-1"></i>
+                                            {{ branch.phone_number }}
+                                        </p>
+                                    {% endif %}
+                                    
+                                    {% if branch.email %}
+                                        <p class="text-muted mb-2">
+                                            <i class="bi bi-envelope me-1"></i>
+                                            <a href="mailto:{{ branch.email }}" class="text-decoration-none">{{ branch.email }}</a>
+                                        </p>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Branch Statistics -->
+                                <div class="row text-center mb-3">
+                                    <div class="col-4">
+                                        <div class="border-end">
+                                            <div class="fw-bold text-primary">{{ branch.total_books }}</div>
+                                            <small class="text-muted">Books</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="border-end">
+                                            <div class="fw-bold text-success">{{ branch.available_books }}</div>
+                                            <small class="text-muted">Available</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="fw-bold text-info">{{ branch.sections_count }}</div>
+                                        <small class="text-muted">Sections</small>
+                                    </div>
+                                </div>
+
+                                <!-- Operating Hours -->
+                                {% if branch.operating_hours.exists %}
+                                    <div class="mb-3">
+                                        <h6 class="fw-bold mb-2">
+                                            <i class="bi bi-clock me-1"></i>Operating Hours
+                                        </h6>
+                                        <div class="small">
+                                            {% for hours in branch.operating_hours.all %}
+                                                <div class="d-flex justify-content-between">
+                                                    <span>{{ hours.get_weekday_display }}</span>
+                                                    <span>
+                                                        {% if hours.is_closed %}
+                                                            <span class="text-muted">Closed</span>
+                                                        {% else %}
+                                                            {{ hours.opening_time|time:"g:i A" }} - {{ hours.closing_time|time:"g:i A" }}
+                                                        {% endif %}
+                                                    </span>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Actions -->
+                                <div class="mt-auto">
+                                    <a href="{% url 'library_branches:branch_detail' branch.pk %}" class="btn btn-primary btn-sm w-100">
+                                        <i class="bi bi-eye me-1"></i>View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="bi bi-building text-muted" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4 class="text-muted">No Library Branches Found</h4>
+                    <p class="text-muted">There are currently no active library branches.</p>
+                    {% if user.is_staff %}
+                        <a href="{% url 'admin:library_branches_librarybranch_add' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Add New Branch
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

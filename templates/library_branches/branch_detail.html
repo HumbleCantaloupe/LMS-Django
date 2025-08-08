@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ branch.name }} - Library Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2 mb-0">
+                    <i class="bi bi-building text-primary me-2"></i>
+                    {{ branch.name }}
+                </h1>
+                <a href="{% url 'library_branches:branch_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Branches
+                </a>
+            </div>
+
+            <div class="row">
+                <!-- Main Info -->
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Branch Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Branch Code:</strong> {{ branch.code }}</p>
+                                    <p><strong>Manager:</strong> {{ branch.manager_name }}</p>
+                                    <p><strong>Established:</strong> {{ branch.established_date|date:"M d, Y" }}</p>
+                                    <p><strong>Status:</strong> 
+                                        {% if branch.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Address:</strong><br>{{ branch.address }}</p>
+                                    <p><strong>Phone:</strong> {{ branch.phone_number }}</p>
+                                    <p><strong>Email:</strong> 
+                                        <a href="mailto:{{ branch.email }}">{{ branch.email }}</a>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Collection Stats -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Collection Statistics</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <div class="border-end">
+                                        <h4 class="text-primary">{{ branch.total_books }}</h4>
+                                        <small class="text-muted">Total Books</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="border-end">
+                                        <h4 class="text-success">{{ branch.available_books }}</h4>
+                                        <small class="text-muted">Available</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="border-end">
+                                        <h4 class="text-info">{{ branch.sections_count }}</h4>
+                                        <small class="text-muted">Sections</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <h4 class="text-warning">{{ branch.capacity_percentage|floatformat:1 }}%</h4>
+                                    <small class="text-muted">Capacity Used</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sections -->
+                    {% if branch.sections.exists %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Library Sections</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for section in branch.sections.all %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="border rounded p-3">
+                                        <h6 class="fw-bold">{{ section.name }}</h6>
+                                        <p class="mb-1"><strong>Type:</strong> {{ section.get_section_type_display }}</p>
+                                        <p class="mb-1"><strong>Floor:</strong> {{ section.floor_number }}</p>
+                                        <p class="mb-1"><strong>Shelves:</strong> {{ section.shelf_range_start }} - {{ section.shelf_range_end }}</p>
+                                        {% if section.is_restricted %}
+                                            <span class="badge bg-warning">Restricted Access</span>
+                                        {% endif %}
+                                        {% if section.temperature_controlled %}
+                                            <span class="badge bg-info">Climate Controlled</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <!-- Operating Hours -->
+                    {% if branch.operating_hours.exists %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clock me-1"></i>Operating Hours
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% for hours in branch.operating_hours.all %}
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="fw-bold">{{ hours.get_weekday_display }}</span>
+                                    <span>
+                                        {% if hours.is_closed %}
+                                            <span class="text-muted">Closed</span>
+                                        {% else %}
+                                            {{ hours.opening_time|time:"g:i A" }} - {{ hours.closing_time|time:"g:i A" }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Facilities -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-gear me-1"></i>Facilities
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <i class="bi bi-wifi {% if branch.wifi_available %}text-success{% else %}text-muted{% endif %} me-2"></i>
+                                <span {% if not branch.wifi_available %}class="text-muted"{% endif %}>WiFi Available</span>
+                            </div>
+                            <div class="mb-2">
+                                <i class="bi bi-car-front {% if branch.parking_available %}text-success{% else %}text-muted{% endif %} me-2"></i>
+                                <span {% if not branch.parking_available %}class="text-muted"{% endif %}>Parking Available</span>
+                            </div>
+                            <div class="mb-2">
+                                <i class="bi bi-universal-access {% if branch.accessible_entrance %}text-success{% else %}text-muted{% endif %} me-2"></i>
+                                <span {% if not branch.accessible_entrance %}class="text-muted"{% endif %}>Accessible Entrance</span>
+                            </div>
+                            
+                            {% if branch.study_rooms > 0 %}
+                            <div class="mb-2">
+                                <i class="bi bi-door-open text-info me-2"></i>
+                                <span>{{ branch.study_rooms }} Study Room{{ branch.study_rooms|pluralize }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            {% if branch.computer_stations > 0 %}
+                            <div class="mb-2">
+                                <i class="bi bi-pc-display text-info me-2"></i>
+                                <span>{{ branch.computer_stations }} Computer Station{{ branch.computer_stations|pluralize }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Quick Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'books:book_list' %}?branch={{ branch.id }}" class="btn btn-primary">
+                                    <i class="bi bi-book me-1"></i>Browse Books
+                                </a>
+                                <a href="{% url 'borrowing:browse_books' %}" class="btn btn-success">
+                                    <i class="bi bi-arrow-right-circle me-1"></i>Borrow Books
+                                </a>
+                                {% if user.is_staff %}
+                                <a href="{% url 'admin:library_branches_librarybranch_change' branch.id %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-pencil me-1"></i>Edit Branch
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

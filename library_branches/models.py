@@ -43,6 +43,19 @@ class LibraryBranch(models.Model):
         if self.total_capacity > 0:
             return (self.current_book_count / self.total_capacity) * 100
         return 0
+    
+    # Properties for template compatibility
+    @property
+    def total_books(self):
+        return self.current_book_count
+    
+    @property
+    def available_books(self):
+        return self.available_books_count
+    
+    @property
+    def sections_count(self):
+        return self.sections.count()
 
 class LibrarySection(models.Model):
     SECTION_TYPE_CHOICES = [
