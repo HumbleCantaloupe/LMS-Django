@@ -1,22 +1,16 @@
-#!/usr/bin/env python
 """
 Comprehensive functionality test for the Library Management System
 """
-
 import os
 import sys
 import django
-
-# Setup Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'library_management_system.settings')
 django.setup()
-
 from django.test import Client
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from books.models import Book, Author, Publisher, Category
 from library_branches.models import LibraryBranch
-
 def test_basic_functionality():
     """Test basic system functionality"""
     print("🔍 Testing Library Management System Functionality\n")
@@ -24,7 +18,7 @@ def test_basic_functionality():
     client = Client()
     User = get_user_model()
     
-    # Test 1: Home page loads
+    
     print("1. Testing home page...")
     try:
         response = client.get('/')
@@ -35,7 +29,7 @@ def test_basic_functionality():
     except Exception as e:
         print(f"   ❌ Home page error: {str(e)}")
     
-    # Test 2: Books list page
+    
     print("2. Testing books list page...")
     try:
         response = client.get('/books/')
@@ -46,7 +40,7 @@ def test_basic_functionality():
     except Exception as e:
         print(f"   ❌ Books list page error: {str(e)}")
     
-    # Test 3: Login page
+    
     print("3. Testing login page...")
     try:
         response = client.get('/accounts/login/')
@@ -57,7 +51,7 @@ def test_basic_functionality():
     except Exception as e:
         print(f"   ❌ Login page error: {str(e)}")
     
-    # Test 4: User authentication
+    
     print("4. Testing user authentication...")
     try:
         if User.objects.filter(username='member').exists():
@@ -65,7 +59,7 @@ def test_basic_functionality():
             if login_success:
                 print("   ✅ User authentication works")
                 
-                # Test dashboard access after login
+                
                 response = client.get('/accounts/dashboard/')
                 if response.status_code == 200:
                     print("   ✅ Dashboard accessible after login")
@@ -78,11 +72,11 @@ def test_basic_functionality():
     except Exception as e:
         print(f"   ❌ Authentication test error: {str(e)}")
     
-    # Test 5: Admin interface
+    
     print("5. Testing admin interface...")
     try:
         response = client.get('/admin/')
-        # Should redirect to login for admin
+        
         if response.status_code in [200, 302]:
             print("   ✅ Admin interface accessible")
         else:
@@ -90,7 +84,7 @@ def test_basic_functionality():
     except Exception as e:
         print(f"   ❌ Admin interface error: {str(e)}")
     
-    # Test 6: Library branches
+    
     print("6. Testing library branches...")
     try:
         response = client.get('/branches/')
@@ -101,10 +95,10 @@ def test_basic_functionality():
     except Exception as e:
         print(f"   ❌ Library branches error: {str(e)}")
     
-    # Test 7: Data integrity
+    
     print("7. Testing data integrity...")
     try:
-        # Check if we have sample data
+        
         user_count = User.objects.count()
         book_count = Book.objects.count()
         branch_count = LibraryBranch.objects.count()
@@ -131,6 +125,5 @@ def test_basic_functionality():
     print("   • Sample data available for testing")
     
     print("\n🚀 The system is ready for use!")
-
 if __name__ == "__main__":
     test_basic_functionality()
