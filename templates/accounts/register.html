@@ -35,68 +35,96 @@
                             {% csrf_token %}
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label for="id_username" class="form-label">
+                                    <label for="{{ form.username.id_for_label }}" class="form-label">
                                         <i class="fas fa-user me-1"></i>Username *
                                     </label>
-                                    <input type="text" class="form-control" name="username" id="id_username" required>
+                                    {{ form.username }}
+                                    {% if form.username.errors %}
+                                        <div class="text-danger small">{{ form.username.errors.0 }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="id_email" class="form-label">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label">
                                         <i class="fas fa-envelope me-1"></i>Email *
                                     </label>
-                                    <input type="email" class="form-control" name="email" id="id_email" required>
+                                    {{ form.email }}
+                                    {% if form.email.errors %}
+                                        <div class="text-danger small">{{ form.email.errors.0 }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
                             
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label for="id_first_name" class="form-label">
+                                    <label for="{{ form.first_name.id_for_label }}" class="form-label">
                                         <i class="fas fa-user me-1"></i>First Name *
                                     </label>
-                                    <input type="text" class="form-control" name="first_name" id="id_first_name" required>
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}
+                                        <div class="text-danger small">{{ form.first_name.errors.0 }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="id_last_name" class="form-label">
+                                    <label for="{{ form.last_name.id_for_label }}" class="form-label">
                                         <i class="fas fa-user me-1"></i>Last Name *
                                     </label>
-                                    <input type="text" class="form-control" name="last_name" id="id_last_name" required>
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}
+                                        <div class="text-danger small">{{ form.last_name.errors.0 }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
                             
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label for="id_phone_number" class="form-label">
+                                    <label for="{{ form.phone_number.id_for_label }}" class="form-label">
                                         <i class="fas fa-phone me-1"></i>Phone Number
                                     </label>
-                                    <input type="tel" class="form-control" name="phone_number" id="id_phone_number">
+                                    {{ form.phone_number }}
+                                    {% if form.phone_number.errors %}
+                                        <div class="text-danger small">{{ form.phone_number.errors.0 }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="id_date_of_birth" class="form-label">
+                                    <label for="{{ form.date_of_birth.id_for_label }}" class="form-label">
                                         <i class="fas fa-calendar me-1"></i>Date of Birth
                                     </label>
-                                    <input type="date" class="form-control" name="date_of_birth" id="id_date_of_birth">
+                                    {{ form.date_of_birth }}
+                                    {% if form.date_of_birth.errors %}
+                                        <div class="text-danger small">{{ form.date_of_birth.errors.0 }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
                             
                             <div class="mb-3">
-                                <label for="id_address" class="form-label">
+                                <label for="{{ form.address.id_for_label }}" class="form-label">
                                     <i class="fas fa-map-marker-alt me-1"></i>Address
                                 </label>
-                                <textarea class="form-control" name="address" id="id_address" rows="3"></textarea>
+                                {{ form.address }}
+                                {% if form.address.errors %}
+                                    <div class="text-danger small">{{ form.address.errors.0 }}</div>
+                                {% endif %}
                             </div>
                             
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label for="id_password1" class="form-label">
+                                    <label for="{{ form.password1.id_for_label }}" class="form-label">
                                         <i class="fas fa-lock me-1"></i>Password *
                                     </label>
-                                    <input type="password" class="form-control" name="password1" id="id_password1" required>
+                                    {{ form.password1 }}
+                                    {% if form.password1.errors %}
+                                        <div class="text-danger small">{{ form.password1.errors.0 }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="id_password2" class="form-label">
+                                    <label for="{{ form.password2.id_for_label }}" class="form-label">
                                         <i class="fas fa-lock me-1"></i>Confirm Password *
                                     </label>
-                                    <input type="password" class="form-control" name="password2" id="id_password2" required>
+                                    {{ form.password2 }}
+                                    {% if form.password2.errors %}
+                                        <div class="text-danger small">{{ form.password2.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
                                 </div>
                             </div>
                             

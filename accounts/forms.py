@@ -18,6 +18,14 @@ class CustomUserCreationForm(UserCreationForm):
         fields = ('username', 'email', 'first_name', 'last_name', 
                  'phone_number', 'date_of_birth', 'address', 'password1', 'password2')
     
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add Bootstrap classes to all fields
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'form-control'
+            if field.required:
+                field.widget.attrs['required'] = True
+    
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']

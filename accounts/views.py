@@ -23,10 +23,33 @@ class RegisterView(CreateView):
     
     def form_valid(self, form):
         response = super().form_valid(form)
-        user = form.save()
+        user = self.object
+        
+        # Create UserProfile for the new user
+        UserProfile.objects.get_or_create(user=user)
+        
+        # Log the user in
         login(self.request, user)
-        messages.success(self.request, 'Account created successfully!')
+        
+        # Create audit log
+        AuditLog.objects.create(
+            user=user,
+            action='account_created',
+            description=f'Account created for user {user.username}',
+            ip_address=self.get_client_ip(),
+            user_agent=self.request.META.get('HTTP_USER_AGENT', '')
+        )
+        
+        messages.success(self.request, 'Account created successfully! Welcome to the library!')
         return redirect('accounts:profile')
+    
+    def get_client_ip(self):
+        x_forwarded_for = self.request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = self.request.META.get('REMOTE_ADDR')
+        return ip
 
 class ProfileView(LoginRequiredMixin, TemplateView):
     template_name = 'accounts/profile.html'
