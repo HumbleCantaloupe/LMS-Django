@@ -1,0 +1,395 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Library Members - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .member-card {
+        transition: transform 0.2s ease-in-out;
+    }
+    .member-card:hover {
+        transform: translateY(-2px);
+    }
+    .status-badge {
+        font-size: 0.75rem;
+    }
+    .member-stats {
+        font-size: 0.9rem;
+    }
+    .search-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        color: white;
+    }
+    .btn-outline-white {
+        color: white;
+        border-color: white;
+    }
+    .btn-outline-white:hover {
+        background-color: white;
+        color: #667eea;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-users text-primary me-2"></i>
+                        Library Members
+                    </h1>
+                    <p class="text-muted">Manage library member accounts and view member statistics</p>
+                </div>
+                <div>
+                    <a href="{% url 'accounts:member_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>
+                        Add New Member
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="search-container">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <label for="search" class="form-label">Search Members</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" 
+                           class="form-control" 
+                           id="search" 
+                           name="search" 
+                           value="{{ request.GET.search }}" 
+                           placeholder="Search by name, username, or email...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status Filter</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All Members</option>
+                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <div class="w-100">
+                    <button type="submit" class="btn btn-outline-white me-2">
+                        <i class="fas fa-search me-1"></i>Search
+                    </button>
+                    <a href="{% url 'accounts:member_list' %}" class="btn btn-outline-white">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Members</h6>
+                            <h3>{{ members|length }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Active Members</h6>
+                            <h3>{{ members|length }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-user-check fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">With Active Loans</h6>
+                            <h3>{{ members|length }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-book fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">New This Month</h6>
+                            <h3>0</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-user-plus fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Members List -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list me-2 text-primary"></i>
+                Member Directory
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if members %}
+                <div class="row">
+                    {% for member in members %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card member-card h-100 border-left-primary">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar me-3">
+                                        {% if member.profile_picture %}
+                                            <img src="{{ member.profile_picture.url }}" 
+                                                 alt="{{ member.full_name }}" 
+                                                 class="rounded-circle" 
+                                                 width="50" height="50">
+                                        {% else %}
+                                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" 
+                                                 style="width: 50px; height: 50px;">
+                                                <i class="fas fa-user text-white"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ member.full_name }}</h6>
+                                        <small class="text-muted">@{{ member.username }}</small>
+                                    </div>
+                                    <div>
+                                        {% if member.is_active_member %}
+                                            <span class="badge bg-success status-badge">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary status-badge">Inactive</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="member-stats">
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <small class="text-muted d-block">Books</small>
+                                            <strong>{{ member.active_borrowings|default:0 }}</strong>
+                                        </div>
+                                        <div class="col-4">
+                                            <small class="text-muted d-block">Card</small>
+                                            <strong class="small">{{ member.library_card_number|default:"N/A" }}</strong>
+                                        </div>
+                                        <div class="col-4">
+                                            <small class="text-muted d-block">Joined</small>
+                                            <strong class="small">{{ member.membership_date|date:"M Y" }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-3">
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-envelope me-1"></i>
+                                        {{ member.email|truncatechars:20 }}
+                                    </small>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'accounts:member_edit' member.pk %}" 
+                                           class="btn btn-sm btn-outline-primary" 
+                                           title="Edit Member">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'accounts:member_detail' member.pk %}" 
+                                           class="btn btn-sm btn-outline-info" 
+                                           title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Member Detail Modal -->
+                    <div class="modal fade" id="memberModal{{ member.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Member Details: {{ member.full_name }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <table class="table table-borderless">
+                                                <tr>
+                                                    <td><strong>Username:</strong></td>
+                                                    <td>{{ member.username }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Email:</strong></td>
+                                                    <td>{{ member.email }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Phone:</strong></td>
+                                                    <td>{{ member.phone_number|default:"Not provided" }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Date of Birth:</strong></td>
+                                                    <td>{{ member.date_of_birth|default:"Not provided" }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Library Card:</strong></td>
+                                                    <td>{{ member.library_card_number|default:"Not assigned" }}</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <table class="table table-borderless">
+                                                <tr>
+                                                    <td><strong>Member Since:</strong></td>
+                                                    <td>{{ member.membership_date|date:"F d, Y" }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Status:</strong></td>
+                                                    <td>
+                                                        {% if member.is_active_member %}
+                                                            <span class="badge bg-success">Active</span>
+                                                        {% else %}
+                                                            <span class="badge bg-secondary">Inactive</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Active Borrowings:</strong></td>
+                                                    <td>{{ member.active_borrowings }} books</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Address:</strong></td>
+                                                    <td>{{ member.address|default:"Not provided" }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Emergency Contact:</strong></td>
+                                                    <td>
+                                                        {{ member.emergency_contact_name|default:"Not provided" }}
+                                                        {% if member.emergency_contact_phone %}
+                                                            <br><small class="text-muted">{{ member.emergency_contact_phone }}</small>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <a href="{% url 'accounts:member_detail' member.pk %}" class="btn btn-primary">
+                                        <i class="fas fa-eye me-1"></i>View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                <nav aria-label="Members pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}page=1">First</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}page={{ page_obj.paginator.num_pages }}">Last</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <!-- No Members Found -->
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-users fa-4x text-muted"></i>
+                    </div>
+                    <h4 class="text-muted">No Members Found</h4>
+                    <p class="text-muted">
+                        {% if request.GET.search or request.GET.status %}
+                            No members match your search criteria. Try adjusting your filters.
+                        {% else %}
+                            No library members have been registered yet.
+                        {% endif %}
+                    </p>
+                    {% if not request.GET.search and not request.GET.status %}
+                    <a href="{% url 'accounts:member_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>
+                        Add First Member
+                    </a>
+                    {% else %}
+                    <a href="{% url 'accounts:member_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-times me-1"></i>
+                        Clear Filters
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.border-left-primary {
+    border-left: 4px solid #007bff !important;
+}
+</style>
+{% endblock %}

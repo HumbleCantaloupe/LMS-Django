@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Book Copy - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        padding: 2rem;
+    }
+    .section-header {
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        color: #007bff;
+    }
+    .required-field {
+        color: #dc3545;
+    }
+    .form-help {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    .copy-info {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .btn-outline-secondary {
+        border-color: #6c757d;
+        color: #6c757d;
+    }
+    .btn-outline-secondary:hover {
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-edit text-primary me-2"></i>
+                        Edit Book Copy
+                    </h1>
+                    <p class="text-muted mb-0">Update book copy information and status</p>
+                </div>
+                <div>
+                    <a href="{% url 'books:copy_list' bookcopy.book.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Copies
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Copy Info -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-lg-8">
+            <div class="copy-info">
+                <h5 class="mb-2">
+                    <i class="fas fa-copy me-2"></i>
+                    Currently Editing: Copy {{ bookcopy.copy_number }}
+                </h5>
+                <div class="d-flex align-items-center">
+                    {% if bookcopy.book.cover_image %}
+                        <img src="{{ bookcopy.book.cover_image.url }}" 
+                             alt="{{ bookcopy.book.title }}" 
+                             class="me-3" 
+                             style="width: 60px; height: 80px; object-fit: cover; border-radius: 4px;">
+                    {% else %}
+                        <div class="me-3 d-flex align-items-center justify-content-center text-muted" 
+                             style="width: 60px; height: 80px; background-color: #e9ecef; border-radius: 4px;">
+                            <i class="fas fa-book"></i>
+                        </div>
+                    {% endif %}
+                    <div>
+                        <h6 class="mb-1">{{ bookcopy.book.title }}</h6>
+                        <p class="text-muted mb-1">
+                            by {% for author in bookcopy.book.authors.all %}
+                                {{ author.full_name }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </p>
+                        <small class="text-muted">
+                            ISBN: {{ bookcopy.book.isbn }} • 
+                            Current Status: 
+                            <span class="badge 
+                                {% if bookcopy.status == 'available' %}bg-success
+                                {% elif bookcopy.status == 'borrowed' %}bg-warning
+                                {% elif bookcopy.status == 'reserved' %}bg-info
+                                {% else %}bg-secondary{% endif %}">
+                                {{ bookcopy.get_status_display }}
+                            </span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="form-container">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Copy Details -->
+                    <div class="mb-4">
+                        <h4 class="section-header">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Copy Details
+                        </h4>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.branch.id_for_label }}" class="form-label">
+                                        Library Branch <span class="required-field">*</span>
+                                    </label>
+                                    <select class="form-control {% if form.branch.errors %}is-invalid{% endif %}" 
+                                            id="{{ form.branch.id_for_label }}" 
+                                            name="branch" 
+                                            required>
+                                        {% for branch in branches %}
+                                            <option value="{{ branch.id }}" 
+                                                    {% if form.branch.value == branch.id %}selected{% endif %}>
+                                                {{ branch.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if form.branch.errors %}
+                                        <div class="invalid-feedback">{{ form.branch.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.section.id_for_label }}" class="form-label">Section</label>
+                                    <input type="text" 
+                                           class="form-control {% if form.section.errors %}is-invalid{% endif %}" 
+                                           id="{{ form.section.id_for_label }}" 
+                                           name="section" 
+                                           value="{{ form.section.value|default:'' }}" 
+                                           maxlength="50">
+                                    {% if form.section.errors %}
+                                        <div class="invalid-feedback">{{ form.section.errors.0 }}</div>
+                                    {% endif %}
+                                    <div class="form-help">Library section where the book is located</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.copy_number.id_for_label }}" class="form-label">
+                                        Copy Number <span class="required-field">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control {% if form.copy_number.errors %}is-invalid{% endif %}" 
+                                           id="{{ form.copy_number.id_for_label }}" 
+                                           name="copy_number" 
+                                           value="{{ form.copy_number.value|default:'' }}" 
+                                           maxlength="10" 
+                                           required>
+                                    {% if form.copy_number.errors %}
+                                        <div class="invalid-feedback">{{ form.copy_number.errors.0 }}</div>
+                                    {% endif %}
+                                    <div class="form-help">Unique identifier for this copy</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.barcode.id_for_label }}" class="form-label">Barcode</label>
+                                    <input type="text" 
+                                           class="form-control {% if form.barcode.errors %}is-invalid{% endif %}" 
+                                           id="{{ form.barcode.id_for_label }}" 
+                                           name="barcode" 
+                                           value="{{ form.barcode.value|default:'' }}" 
+                                           maxlength="50">
+                                    {% if form.barcode.errors %}
+                                        <div class="invalid-feedback">{{ form.barcode.errors.0 }}</div>
+                                    {% endif %}
+                                    <div class="form-help">Barcode for quick scanning</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.status.id_for_label }}" class="form-label">
+                                        Status <span class="required-field">*</span>
+                                    </label>
+                                    <select class="form-control {% if form.status.errors %}is-invalid{% endif %}" 
+                                            id="{{ form.status.id_for_label }}" 
+                                            name="status" 
+                                            required>
+                                        <option value="available" {% if form.status.value == 'available' %}selected{% endif %}>Available</option>
+                                        <option value="borrowed" {% if form.status.value == 'borrowed' %}selected{% endif %}>Borrowed</option>
+                                        <option value="reserved" {% if form.status.value == 'reserved' %}selected{% endif %}>Reserved</option>
+                                        <option value="maintenance" {% if form.status.value == 'maintenance' %}selected{% endif %}>Under Maintenance</option>
+                                        <option value="lost" {% if form.status.value == 'lost' %}selected{% endif %}>Lost</option>
+                                        <option value="damaged" {% if form.status.value == 'damaged' %}selected{% endif %}>Damaged</option>
+                                    </select>
+                                    {% if form.status.errors %}
+                                        <div class="invalid-feedback">{{ form.status.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.condition.id_for_label }}" class="form-label">
+                                        Condition <span class="required-field">*</span>
+                                    </label>
+                                    <select class="form-control {% if form.condition.errors %}is-invalid{% endif %}" 
+                                            id="{{ form.condition.id_for_label }}" 
+                                            name="condition" 
+                                            required>
+                                        <option value="excellent" {% if form.condition.value == 'excellent' %}selected{% endif %}>Excellent</option>
+                                        <option value="good" {% if form.condition.value == 'good' %}selected{% endif %}>Good</option>
+                                        <option value="fair" {% if form.condition.value == 'fair' %}selected{% endif %}>Fair</option>
+                                        <option value="poor" {% if form.condition.value == 'poor' %}selected{% endif %}>Poor</option>
+                                        <option value="damaged" {% if form.condition.value == 'damaged' %}selected{% endif %}>Damaged</option>
+                                    </select>
+                                    {% if form.condition.errors %}
+                                        <div class="invalid-feedback">{{ form.condition.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.last_maintenance_date.id_for_label }}" class="form-label">Last Maintenance Date</label>
+                            <input type="date" 
+                                   class="form-control {% if form.last_maintenance_date.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.last_maintenance_date.id_for_label }}" 
+                                   name="last_maintenance_date" 
+                                   value="{{ form.last_maintenance_date.value|default:'' }}">
+                            {% if form.last_maintenance_date.errors %}
+                                <div class="invalid-feedback">{{ form.last_maintenance_date.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-help">Date when this copy was last maintained or inspected</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
+                            <textarea class="form-control {% if form.notes.errors %}is-invalid{% endif %}" 
+                                      id="{{ form.notes.id_for_label }}" 
+                                      name="notes" 
+                                      rows="3">{{ form.notes.value|default:'' }}</textarea>
+                            {% if form.notes.errors %}
+                                <div class="invalid-feedback">{{ form.notes.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-help">Additional notes about this copy</div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'books:copy_list' bookcopy.book.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

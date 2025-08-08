@@ -12,11 +12,15 @@ class CustomUserCreationForm(UserCreationForm):
     phone_number = forms.CharField(max_length=15, required=False)
     date_of_birth = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
     address = forms.CharField(widget=forms.Textarea(attrs={'rows': 3}), required=False)
+    emergency_contact_name = forms.CharField(max_length=100, required=False)
+    emergency_contact_phone = forms.CharField(max_length=15, required=False)
     
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 
-                 'phone_number', 'date_of_birth', 'address', 'password1', 'password2')
+                 'phone_number', 'date_of_birth', 'address', 
+                 'emergency_contact_name', 'emergency_contact_phone',
+                 'password1', 'password2')
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -34,6 +38,8 @@ class CustomUserCreationForm(UserCreationForm):
         user.phone_number = self.cleaned_data['phone_number']
         user.date_of_birth = self.cleaned_data['date_of_birth']
         user.address = self.cleaned_data['address']
+        user.emergency_contact_name = self.cleaned_data['emergency_contact_name']
+        user.emergency_contact_phone = self.cleaned_data['emergency_contact_phone']
         if commit:
             user.save()
         return user
@@ -91,3 +97,22 @@ class MemberSearchForm(forms.Form):
         initial='member',
         widget=forms.Select(attrs={'class': 'form-control'})
     )
+
+class MemberEditForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'phone_number', 
+                 'address', 'is_active_member', 'membership_expiry']
+        widgets = {
+            'address': forms.Textarea(attrs={'rows': 3}),
+            'membership_expiry': forms.DateInput(attrs={'type': 'date'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add Bootstrap classes to all fields
+        for field_name, field in self.fields.items():
+            if field_name == 'is_active_member':
+                field.widget.attrs['class'] = 'form-check-input'
+            else:
+                field.widget.attrs['class'] = 'form-control'

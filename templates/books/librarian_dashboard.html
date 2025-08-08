@@ -1,0 +1,424 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Librarian Dashboard - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        transition: transform 0.2s ease-in-out;
+    }
+    .stats-card:hover {
+        transform: translateY(-2px);
+    }
+    .stats-card .card-body {
+        padding: 1.5rem;
+    }
+    .stats-icon {
+        font-size: 3rem;
+        opacity: 0.8;
+    }
+    .quick-action-card {
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    .quick-action-card:hover {
+        border-color: #007bff;
+        box-shadow: 0 4px 15px rgba(0,123,255,0.1);
+        transform: translateY(-2px);
+    }
+    .activity-item {
+        border-left: 4px solid #007bff;
+        background: #f8f9fa;
+        border-radius: 0 8px 8px 0;
+    }
+    .overdue-item {
+        border-left-color: #dc3545;
+        background: #fff5f5;
+    }
+    .due-soon-item {
+        border-left-color: #ffc107;
+        background: #fffbf0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-tachometer-alt text-primary me-2"></i>
+                        Librarian Dashboard
+                    </h1>
+                    <p class="text-muted">Welcome back! Here's an overview of your library system.</p>
+                </div>
+                <div>
+                    <span class="badge bg-success px-3 py-2">
+                        <i class="fas fa-user-tie me-1"></i>
+                        {{ user.get_user_type_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title mb-1">Total Books</h6>
+                            <h2 class="mb-0">{{ total_books }}</h2>
+                            <small class="opacity-75">{{ active_books }} active</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-book stats-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title mb-1">Book Copies</h6>
+                            <h2 class="mb-0">{{ total_copies }}</h2>
+                            <small class="opacity-75">{{ available_copies }} available</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-copy stats-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title mb-1">Library Members</h6>
+                            <h2 class="mb-0">{{ total_members }}</h2>
+                            <small class="opacity-75">{{ active_members }} active</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users stats-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title mb-1">Active Loans</h6>
+                            <h2 class="mb-0">{{ active_borrowings }}</h2>
+                            <small class="opacity-75">{{ overdue_books }} overdue</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-hand-holding stats-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts Row -->
+    {% if overdue_books > 0 or unpaid_fines > 0 %}
+    <div class="row mb-4">
+        {% if overdue_books > 0 %}
+        <div class="col-md-6">
+            <div class="alert alert-danger" role="alert">
+                <h6 class="alert-heading">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Overdue Books Alert
+                </h6>
+                <p class="mb-0">There are <strong>{{ overdue_books }}</strong> overdue books that need attention.</p>
+            </div>
+        </div>
+        {% endif %}
+        {% if unpaid_fines > 0 %}
+        <div class="col-md-6">
+            <div class="alert alert-warning" role="alert">
+                <h6 class="alert-heading">
+                    <i class="fas fa-money-bill-wave me-2"></i>
+                    Unpaid Fines Alert
+                </h6>
+                <p class="mb-0">There are <strong>{{ unpaid_fines }}</strong> unpaid fines totaling <strong>MVR {{ total_fine_amount }}</strong>.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-3">
+                <i class="fas fa-bolt text-warning me-2"></i>
+                Quick Actions
+            </h4>
+        </div>
+        <div class="col-md-3">
+            <div class="card quick-action-card text-center">
+                <div class="card-body">
+                    <i class="fas fa-plus-circle fa-3x text-primary mb-3"></i>
+                    <h6 class="card-title">Add New Book</h6>
+                    <p class="card-text small text-muted">Add a new book to the library collection</p>
+                    <a href="{% url 'books:create' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Add Book
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card quick-action-card text-center">
+                <div class="card-body">
+                    <i class="fas fa-user-plus fa-3x text-success mb-3"></i>
+                    <h6 class="card-title">Add New Member</h6>
+                    <p class="card-text small text-muted">Register a new library member</p>
+                    <a href="{% url 'accounts:member_create' %}" class="btn btn-success btn-sm">
+                        <i class="fas fa-user-plus me-1"></i>Add Member
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card quick-action-card text-center">
+                <div class="card-body">
+                    <i class="fas fa-book-open fa-3x text-info mb-3"></i>
+                    <h6 class="card-title">Manage Books</h6>
+                    <p class="card-text small text-muted">View and manage all library books</p>
+                    <a href="{% url 'books:manage_list' %}" class="btn btn-info btn-sm">
+                        <i class="fas fa-cog me-1"></i>Manage
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card quick-action-card text-center">
+                <div class="card-body">
+                    <i class="fas fa-users fa-3x text-warning mb-3"></i>
+                    <h6 class="card-title">View Members</h6>
+                    <p class="card-text small text-muted">View and manage library members</p>
+                    <a href="{% url 'accounts:member_list' %}" class="btn btn-warning btn-sm">
+                        <i class="fas fa-list me-1"></i>View All
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Management Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-3">
+                <i class="fas fa-cogs text-secondary me-2"></i>
+                Content Management
+            </h4>
+        </div>
+        <div class="col-md-3">
+            <div class="card quick-action-card text-center">
+                <div class="card-body">
+                    <i class="fas fa-user-edit fa-3x text-primary mb-3"></i>
+                    <h6 class="card-title">Manage Authors</h6>
+                    <p class="card-text small text-muted">Add, edit, and manage book authors</p>
+                    <a href="{% url 'books:author_list' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-users me-1"></i>Manage
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card quick-action-card text-center">
+                <div class="card-body">
+                    <i class="fas fa-building fa-3x text-success mb-3"></i>
+                    <h6 class="card-title">Manage Publishers</h6>
+                    <p class="card-text small text-muted">Add, edit, and manage publishers</p>
+                    <a href="{% url 'books:publisher_list' %}" class="btn btn-success btn-sm">
+                        <i class="fas fa-building me-1"></i>Manage
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card quick-action-card text-center">
+                <div class="card-body">
+                    <i class="fas fa-tags fa-3x text-info mb-3"></i>
+                    <h6 class="card-title">Manage Categories</h6>
+                    <p class="card-text small text-muted">Organize books into categories</p>
+                    <a href="{% url 'books:category_list' %}" class="btn btn-info btn-sm">
+                        <i class="fas fa-tags me-1"></i>Manage
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card quick-action-card text-center">
+                <div class="card-body">
+                    <i class="fas fa-dollar-sign fa-3x text-warning mb-3"></i>
+                    <h6 class="card-title">Manage Fines</h6>
+                    <p class="card-text small text-muted">View and handle member fines</p>
+                    <a href="{% url 'fines:fine_list' %}" class="btn btn-warning btn-sm">
+                        <i class="fas fa-money-bill me-1"></i>View Fines
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities and Alerts -->
+    <div class="row">
+        <!-- Recent Activities -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock text-primary me-2"></i>
+                        Recent Activities
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_borrowings or recent_returns %}
+                        <div class="activity-list">
+                            {% for borrowing in recent_borrowings %}
+                            <div class="activity-item p-3 mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="mb-1">Book Borrowed</h6>
+                                        <p class="mb-1 small">
+                                            <strong>{{ borrowing.user.full_name }}</strong> borrowed 
+                                            <strong>"{{ borrowing.book_copy.book.title }}"</strong>
+                                        </p>
+                                        <small class="text-muted">{{ borrowing.borrowed_at|timesince }} ago</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-success">Borrowed</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            
+                            {% for return in recent_returns %}
+                            <div class="activity-item p-3 mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="mb-1">Book Returned</h6>
+                                        <p class="mb-1 small">
+                                            <strong>{{ return.user.full_name }}</strong> returned 
+                                            <strong>"{{ return.book_copy.book.title }}"</strong>
+                                        </p>
+                                        <small class="text-muted">{{ return.returned_at|timesince }} ago</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-info">Returned</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No recent activities</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Books Due Soon -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-alt text-warning me-2"></i>
+                        Books Due Soon
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if books_due_soon %}
+                        <div class="due-soon-list">
+                            {% for transaction in books_due_soon %}
+                            <div class="due-soon-item p-3 mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="mb-1">{{ transaction.book_copy.book.title }}</h6>
+                                        <p class="mb-1 small">
+                                            Borrowed by <strong>{{ transaction.user.full_name }}</strong>
+                                        </p>
+                                        <small class="text-muted">
+                                            Due: {{ transaction.due_date|date:"M d, Y" }}
+                                            {% if transaction.is_overdue %}
+                                                <span class="text-danger">({{ transaction.days_overdue }} days overdue)</span>
+                                            {% else %}
+                                                ({{ transaction.days_until_due }} days left)
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        {% if transaction.is_overdue %}
+                                            <span class="badge bg-danger">Overdue</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Due Soon</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% if overdue_books > books_due_soon|length %}
+                        <div class="text-center mt-3">
+                            <a href="#" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-eye me-1"></i>
+                                View All Overdue Books
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                            <p class="text-muted">No books due soon</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh dashboard every 5 minutes
+    setTimeout(function() {
+        location.reload();
+    }, 300000); // 5 minutes
+    
+    // Add tooltips to stat cards
+    const statCards = document.querySelectorAll('.stats-card');
+    statCards.forEach(function(card) {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', function() {
+            // Add click handlers for navigation if needed
+        });
+    });
+});
+</script>
+{% endblock %}

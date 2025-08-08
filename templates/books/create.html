@@ -1,0 +1,378 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Add New Book - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        padding: 2rem;
+    }
+    .section-header {
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        color: #007bff;
+    }
+    .required-field {
+        color: #dc3545;
+    }
+    .form-help {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    .preview-container {
+        border: 2px dashed #dee2e6;
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        background-color: #f8f9fa;
+    }
+    .cover-preview {
+        max-width: 200px;
+        max-height: 300px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-plus-circle text-primary me-2"></i>
+                        Add New Book
+                    </h1>
+                    <p class="text-muted">Add a new book to the library collection</p>
+                </div>
+                <div>
+                    <a href="{% url 'books:manage_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        Back to Books
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10 col-xl-8">
+            <div class="form-container">
+                <form method="post" enctype="multipart/form-data" id="bookForm">
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information -->
+                    <div class="mb-4">
+                        <h4 class="section-header">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Basic Information
+                        </h4>
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="{{ form.title.id_for_label }}" class="form-label">
+                                        Title <span class="required-field">*</span>
+                                    </label>
+                                    {{ form.title }}
+                                    {% if form.title.errors %}
+                                        <div class="text-danger small">{{ form.title.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.isbn.id_for_label }}" class="form-label">
+                                        ISBN <span class="required-field">*</span>
+                                    </label>
+                                    {{ form.isbn }}
+                                    {% if form.isbn.errors %}
+                                        <div class="text-danger small">{{ form.isbn.errors.0 }}</div>
+                                    {% endif %}
+                                    <div class="form-help">13-digit ISBN number</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.subtitle.id_for_label }}" class="form-label">Subtitle</label>
+                            {{ form.subtitle }}
+                            {% if form.subtitle.errors %}
+                                <div class="text-danger small">{{ form.subtitle.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small">{{ form.description.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-help">Brief description of the book content</div>
+                        </div>
+                    </div>
+
+                    <!-- Authors and Publisher -->
+                    <div class="mb-4">
+                        <h4 class="section-header">
+                            <i class="fas fa-users me-2"></i>
+                            Authors & Publisher
+                        </h4>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <label for="{{ form.authors.id_for_label }}" class="form-label mb-0">
+                                            Authors <span class="required-field">*</span>
+                                        </label>
+                                        <a href="{% url 'books:author_create' %}" 
+                                           class="btn btn-sm btn-outline-primary" 
+                                           target="_blank" 
+                                           title="Add new author">
+                                            <i class="fas fa-plus me-1"></i>New Author
+                                        </a>
+                                    </div>
+                                    {{ form.authors }}
+                                    {% if form.authors.errors %}
+                                        <div class="text-danger small">{{ form.authors.errors.0 }}</div>
+                                    {% endif %}
+                                    <div class="form-help">Hold Ctrl/Cmd to select multiple authors. Use "New Author" to add authors not in the list.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <label for="{{ form.publisher.id_for_label }}" class="form-label mb-0">
+                                            Publisher <span class="required-field">*</span>
+                                        </label>
+                                        <a href="{% url 'books:publisher_create' %}" 
+                                           class="btn btn-sm btn-outline-primary" 
+                                           target="_blank" 
+                                           title="Add new publisher">
+                                            <i class="fas fa-plus me-1"></i>New Publisher
+                                        </a>
+                                    </div>
+                                    {{ form.publisher }}
+                                    {% if form.publisher.errors %}
+                                        <div class="text-danger small">{{ form.publisher.errors.0 }}</div>
+                                    {% endif %}
+                                    <div class="form-help">Use "New Publisher" to add publishers not in the list.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Publication Details -->
+                    <div class="mb-4">
+                        <h4 class="section-header">
+                            <i class="fas fa-calendar me-2"></i>
+                            Publication Details
+                        </h4>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.publication_date.id_for_label }}" class="form-label">
+                                        Publication Date
+                                    </label>
+                                    {{ form.publication_date }}
+                                    {% if form.publication_date.errors %}
+                                        <div class="text-danger small">{{ form.publication_date.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.edition.id_for_label }}" class="form-label">Edition</label>
+                                    {{ form.edition }}
+                                    {% if form.edition.errors %}
+                                        <div class="text-danger small">{{ form.edition.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.pages.id_for_label }}" class="form-label">Pages</label>
+                                    {{ form.pages }}
+                                    {% if form.pages.errors %}
+                                        <div class="text-danger small">{{ form.pages.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.language.id_for_label }}" class="form-label">Language</label>
+                                    {{ form.language }}
+                                    {% if form.language.errors %}
+                                        <div class="text-danger small">{{ form.language.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.format.id_for_label }}" class="form-label">Format</label>
+                                    {{ form.format }}
+                                    {% if form.format.errors %}
+                                        <div class="text-danger small">{{ form.format.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.price.id_for_label }}" class="form-label">Price (MVR)</label>
+                                    {{ form.price }}
+                                    {% if form.price.errors %}
+                                        <div class="text-danger small">{{ form.price.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Classification -->
+                    <div class="mb-4">
+                        <h4 class="section-header">
+                            <i class="fas fa-tags me-2"></i>
+                            Classification
+                        </h4>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.category.id_for_label }}" class="form-label">
+                                Category <span class="required-field">*</span>
+                            </label>
+                            {{ form.category }}
+                            {% if form.category.errors %}
+                                <div class="text-danger small">{{ form.category.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Cover Image -->
+                    <div class="mb-4">
+                        <h4 class="section-header">
+                            <i class="fas fa-image me-2"></i>
+                            Cover Image
+                        </h4>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.cover_image.id_for_label }}" class="form-label">
+                                        Cover Image
+                                    </label>
+                                    {{ form.cover_image }}
+                                    {% if form.cover_image.errors %}
+                                        <div class="text-danger small">{{ form.cover_image.errors.0 }}</div>
+                                    {% endif %}
+                                    <div class="form-help">Upload a cover image for the book (JPG, PNG, or GIF)</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="preview-container" id="imagePreview">
+                                    <i class="fas fa-image fa-3x text-muted mb-2"></i>
+                                    <p class="text-muted mb-0">Cover image preview will appear here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <div>
+                            <small class="text-muted">
+                                <span class="required-field">*</span> Required fields
+                            </small>
+                        </div>
+                        <div>
+                            <a href="{% url 'books:manage_list' %}" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Add Book
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add Bootstrap classes to form fields
+    const formFields = document.querySelectorAll('input, select, textarea');
+    formFields.forEach(function(field) {
+        if (field.type !== 'checkbox' && field.type !== 'radio') {
+            field.classList.add('form-control');
+        }
+    });
+
+    // Handle multiple select fields
+    const selectMultiple = document.querySelectorAll('select[multiple]');
+    selectMultiple.forEach(function(select) {
+        select.size = Math.min(select.options.length, 5);
+    });
+
+    // Image preview functionality
+    const imageInput = document.getElementById('{{ form.cover_image.id_for_label }}');
+    const previewContainer = document.getElementById('imagePreview');
+    
+    if (imageInput) {
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewContainer.innerHTML = `
+                        <img src="${e.target.result}" alt="Cover Preview" class="cover-preview">
+                        <p class="text-muted mt-2 mb-0">${file.name}</p>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewContainer.innerHTML = `
+                    <i class="fas fa-image fa-3x text-muted mb-2"></i>
+                    <p class="text-muted mb-0">Cover image preview will appear here</p>
+                `;
+            }
+        });
+    }
+
+    // Form validation
+    const form = document.getElementById('bookForm');
+    form.addEventListener('submit', function(e) {
+        const requiredFields = form.querySelectorAll('input[required], select[required], textarea[required]');
+        let isValid = true;
+        
+        requiredFields.forEach(function(field) {
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fill in all required fields.');
+        }
+    });
+});
+</script>
+{% endblock %}

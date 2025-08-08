@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Authors - {{ block.super }}{% endblock %}
+{% block title %}Publishers - {{ block.super }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -14,7 +14,7 @@
         transform: translateY(-2px);
         box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
-    .author-stats {
+    .publisher-stats {
         background: linear-gradient(135deg, #007bff, #0056b3);
         color: white;
         border-radius: 10px;
@@ -34,20 +34,6 @@
     .btn-primary:hover {
         background: linear-gradient(135deg, #0056b3, #004085);
     }
-    .author-avatar {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #007bff, #0056b3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: bold;
-        font-size: 1.2rem;
-        margin-right: 1rem;
-        flex-shrink: 0;
-    }
 </style>
 {% endblock %}
 
@@ -59,15 +45,15 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h1 class="h3 mb-1">
-                        <i class="fas fa-users me-2"></i>
-                        Authors
+                        <i class="fas fa-building me-2"></i>
+                        Publishers
                     </h1>
-                    <p class="text-muted mb-0">Manage book authors and their information</p>
+                    <p class="text-muted mb-0">Manage publishing companies and their information</p>
                 </div>
                 <div>
                     {% if user.is_librarian %}
-                        <a href="{% url 'books:author_create' %}" class="btn btn-primary">
-                            <i class="fas fa-plus me-2"></i>Add New Author
+                        <a href="{% url 'books:publisher_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Add New Publisher
                         </a>
                     {% endif %}
                 </div>
@@ -78,20 +64,20 @@
     <!-- Statistics -->
     <div class="row mb-4">
         <div class="col-md-4">
-            <div class="author-stats">
+            <div class="publisher-stats">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h3 class="mb-0">{{ authors.count }}</h3>
-                        <p class="mb-0">Total Authors</p>
+                        <h3 class="mb-0">{{ publishers.count }}</h3>
+                        <p class="mb-0">Total Publishers</p>
                     </div>
                     <div>
-                        <i class="fas fa-users fa-2x opacity-75"></i>
+                        <i class="fas fa-building fa-2x opacity-75"></i>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="author-stats">
+            <div class="publisher-stats">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <h3 class="mb-0">{{ total_books }}</h3>
@@ -104,11 +90,11 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="author-stats">
+            <div class="publisher-stats">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h3 class="mb-0">{{ authors_with_books }}</h3>
-                        <p class="mb-0">Active Authors</p>
+                        <h3 class="mb-0">{{ publishers_with_books }}</h3>
+                        <p class="mb-0">Active Publishers</p>
                     </div>
                     <div>
                         <i class="fas fa-chart-line fa-2x opacity-75"></i>
@@ -124,98 +110,97 @@
             <input type="text" 
                    name="search" 
                    class="form-control me-2" 
-                   placeholder="Search authors by name, nationality, or biography..." 
+                   placeholder="Search publishers by name, email, or website..." 
                    value="{{ request.GET.search }}">
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-search"></i>
             </button>
             {% if request.GET.search %}
-                <a href="{% url 'books:author_list' %}" class="btn btn-outline-secondary ms-2">
+                <a href="{% url 'books:publisher_list' %}" class="btn btn-outline-secondary ms-2">
                     <i class="fas fa-times"></i>
                 </a>
             {% endif %}
         </form>
     </div>
 
-    <!-- Authors List -->
+    <!-- Publishers List -->
     <div class="row">
-        {% for author in authors %}
+        {% for publisher in publishers %}
             <div class="col-lg-6 col-xl-4 mb-4">
                 <div class="card h-100">
                     <div class="card-body">
-                        <div class="d-flex align-items-start mb-3">
-                            <div class="author-avatar">
-                                {{ author.first_name.0|upper }}{{ author.last_name.0|upper }}
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <h5 class="card-title mb-1">
-                                            <a href="{% url 'books:author_detail' author.pk %}" 
-                                               class="text-decoration-none">
-                                                {{ author.full_name }}
-                                            </a>
-                                        </h5>
-                                        {% if author.nationality %}
-                                            <p class="text-muted mb-0">{{ author.nationality }}</p>
-                                        {% endif %}
-                                    </div>
-                                    {% if user.is_librarian %}
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
-                                                    type="button" 
-                                                    data-bs-toggle="dropdown">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="{% url 'books:author_edit' author.pk %}">
-                                                    <i class="fas fa-edit me-2"></i>Edit
-                                                </a></li>
-                                                <li><a class="dropdown-item text-danger" href="{% url 'books:author_delete' author.pk %}">
-                                                    <i class="fas fa-trash me-2"></i>Delete
-                                                </a></li>
-                                            </ul>
-                                        </div>
-                                    {% endif %}
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-building me-2 text-primary"></i>
+                                {{ publisher.name }}
+                            </h5>
+                            {% if user.is_librarian %}
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                            type="button" 
+                                            data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{% url 'books:publisher_edit' publisher.pk %}">
+                                            <i class="fas fa-edit me-2"></i>Edit
+                                        </a></li>
+                                        <li><a class="dropdown-item text-danger" href="{% url 'books:publisher_delete' publisher.pk %}">
+                                            <i class="fas fa-trash me-2"></i>Delete
+                                        </a></li>
+                                    </ul>
                                 </div>
-                            </div>
+                            {% endif %}
                         </div>
 
-                        <div class="author-details">
-                            {% if author.birth_date %}
+                        <div class="publisher-details">
+                            {% if publisher.established_year %}
                                 <p class="text-muted mb-1">
-                                    <i class="fas fa-birthday-cake me-2"></i>
-                                    Born: {{ author.birth_date|date:"M d, Y" }}
-                                    {% if author.death_date %}
-                                        • Died: {{ author.death_date|date:"M d, Y" }}
-                                    {% endif %}
+                                    <i class="fas fa-calendar me-2"></i>
+                                    Established {{ publisher.established_year }}
                                 </p>
                             {% endif %}
 
-                            {% if author.biography %}
-                                <p class="text-muted small mb-2">
-                                    {{ author.biography|truncatewords:20 }}
+                            {% if publisher.contact_email %}
+                                <p class="mb-1">
+                                    <i class="fas fa-envelope me-2"></i>
+                                    <a href="mailto:{{ publisher.contact_email }}" class="text-decoration-none">
+                                        {{ publisher.contact_email }}
+                                    </a>
+                                </p>
+                            {% endif %}
+
+                            {% if publisher.website %}
+                                <p class="mb-1">
+                                    <i class="fas fa-globe me-2"></i>
+                                    <a href="{{ publisher.website }}" target="_blank" class="text-decoration-none">
+                                        Website
+                                    </a>
+                                </p>
+                            {% endif %}
+
+                            {% if publisher.address %}
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-map-marker-alt me-2"></i>
+                                    {{ publisher.address|truncatewords:8 }}
                                 </p>
                             {% endif %}
 
                             <div class="mt-3">
-                                <span class="badge bg-primary">{{ author.books.count }} book{{ author.books.count|pluralize }}</span>
-                                {% if author.nationality %}
-                                    <span class="badge bg-secondary">{{ author.nationality }}</span>
-                                {% endif %}
+                                <span class="badge bg-primary">{{ publisher.books.count }} book{{ publisher.books.count|pluralize }}</span>
                             </div>
                         </div>
                     </div>
 
-                    {% if author.books.exists %}
+                    {% if publisher.books.exists %}
                         <div class="card-footer bg-light">
                             <h6 class="mb-2">Recent Books:</h6>
                             <div class="small text-muted">
-                                {% for book in author.books.all|slice:":3" %}
+                                {% for book in publisher.books.all|slice:":3" %}
                                     <div>• {{ book.title }}</div>
                                 {% endfor %}
-                                {% if author.books.count > 3 %}
-                                    <div class="text-primary">+ {{ author.books.count|add:"-3" }} more...</div>
+                                {% if publisher.books.count > 3 %}
+                                    <div class="text-primary">+ {{ publisher.books.count|add:"-3" }} more...</div>
                                 {% endif %}
                             </div>
                         </div>
@@ -225,18 +210,18 @@
         {% empty %}
             <div class="col-12">
                 <div class="text-center py-5">
-                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                    <h4 class="text-muted">No Authors Found</h4>
+                    <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Publishers Found</h4>
                     {% if request.GET.search %}
-                        <p class="text-muted">No authors match your search criteria.</p>
-                        <a href="{% url 'books:author_list' %}" class="btn btn-outline-primary">
-                            <i class="fas fa-arrow-left me-2"></i>View All Authors
+                        <p class="text-muted">No publishers match your search criteria.</p>
+                        <a href="{% url 'books:publisher_list' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-2"></i>View All Publishers
                         </a>
                     {% else %}
-                        <p class="text-muted">No authors have been added to the system yet.</p>
+                        <p class="text-muted">No publishers have been added to the system yet.</p>
                         {% if user.is_librarian %}
-                            <a href="{% url 'books:author_create' %}" class="btn btn-primary">
-                                <i class="fas fa-plus me-2"></i>Add First Author
+                            <a href="{% url 'books:publisher_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Add First Publisher
                             </a>
                         {% endif %}
                     {% endif %}
@@ -249,7 +234,7 @@
     {% if is_paginated %}
         <div class="row mt-4">
             <div class="col-12">
-                <nav aria-label="Authors pagination">
+                <nav aria-label="Publishers pagination">
                     <ul class="pagination justify-content-center">
                         {% if page_obj.has_previous %}
                             <li class="page-item">

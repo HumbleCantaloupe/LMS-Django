@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Add New Author - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        padding: 2rem;
+    }
+    .section-header {
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        color: #007bff;
+    }
+    .required-field {
+        color: #dc3545;
+    }
+    .form-help {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    .btn-outline-secondary {
+        border-color: #6c757d;
+        color: #6c757d;
+    }
+    .btn-outline-secondary:hover {
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Add New Author
+                    </h1>
+                    <p class="text-muted mb-0">Add a new author to the library system</p>
+                </div>
+                <div>
+                    <a href="{% url 'books:author_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Authors
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="form-container">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information -->
+                    <div class="mb-4">
+                        <h4 class="section-header">
+                            <i class="fas fa-user me-2"></i>
+                            Basic Information
+                        </h4>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                        First Name <span class="required-field">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control {% if form.first_name.errors %}is-invalid{% endif %}" 
+                                           id="{{ form.first_name.id_for_label }}" 
+                                           name="first_name" 
+                                           value="{{ form.first_name.value|default:'' }}" 
+                                           maxlength="100" 
+                                           required>
+                                    {% if form.first_name.errors %}
+                                        <div class="invalid-feedback">{{ form.first_name.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                        Last Name <span class="required-field">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control {% if form.last_name.errors %}is-invalid{% endif %}" 
+                                           id="{{ form.last_name.id_for_label }}" 
+                                           name="last_name" 
+                                           value="{{ form.last_name.value|default:'' }}" 
+                                           maxlength="100" 
+                                           required>
+                                    {% if form.last_name.errors %}
+                                        <div class="invalid-feedback">{{ form.last_name.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.nationality.id_for_label }}" class="form-label">Nationality</label>
+                            <input type="text" 
+                                   class="form-control {% if form.nationality.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.nationality.id_for_label }}" 
+                                   name="nationality" 
+                                   value="{{ form.nationality.value|default:'' }}" 
+                                   maxlength="50">
+                            {% if form.nationality.errors %}
+                                <div class="invalid-feedback">{{ form.nationality.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-help">Author's nationality (optional)</div>
+                        </div>
+                    </div>
+
+                    <!-- Dates -->
+                    <div class="mb-4">
+                        <h4 class="section-header">
+                            <i class="fas fa-calendar me-2"></i>
+                            Life Dates
+                        </h4>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.birth_date.id_for_label }}" class="form-label">Birth Date</label>
+                                    <input type="date" 
+                                           class="form-control {% if form.birth_date.errors %}is-invalid{% endif %}" 
+                                           id="{{ form.birth_date.id_for_label }}" 
+                                           name="birth_date" 
+                                           value="{{ form.birth_date.value|default:'' }}">
+                                    {% if form.birth_date.errors %}
+                                        <div class="invalid-feedback">{{ form.birth_date.errors.0 }}</div>
+                                    {% endif %}
+                                    <div class="form-help">When the author was born (optional)</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.death_date.id_for_label }}" class="form-label">Death Date</label>
+                                    <input type="date" 
+                                           class="form-control {% if form.death_date.errors %}is-invalid{% endif %}" 
+                                           id="{{ form.death_date.id_for_label }}" 
+                                           name="death_date" 
+                                           value="{{ form.death_date.value|default:'' }}">
+                                    {% if form.death_date.errors %}
+                                        <div class="invalid-feedback">{{ form.death_date.errors.0 }}</div>
+                                    {% endif %}
+                                    <div class="form-help">When the author died (optional, leave blank if still alive)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Biography -->
+                    <div class="mb-4">
+                        <h4 class="section-header">
+                            <i class="fas fa-book-open me-2"></i>
+                            Biography
+                        </h4>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.biography.id_for_label }}" class="form-label">Biography</label>
+                            <textarea class="form-control {% if form.biography.errors %}is-invalid{% endif %}" 
+                                      id="{{ form.biography.id_for_label }}" 
+                                      name="biography" 
+                                      rows="5">{{ form.biography.value|default:'' }}</textarea>
+                            {% if form.biography.errors %}
+                                <div class="invalid-feedback">{{ form.biography.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-help">Brief biography or description of the author (optional)</div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'books:author_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Add Author
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -11,7 +11,7 @@ from django.urls import reverse_lazy
 from django.db.models import Q, Count, Sum
 from django.db import models
 from .models import User, UserProfile, AuditLog
-from .forms import CustomUserCreationForm, UserProfileForm
+from .forms import CustomUserCreationForm, UserProfileForm, MemberEditForm
 from borrowing.models import BorrowTransaction
 from fines.models import Fine
 
@@ -170,8 +170,7 @@ class MemberDetailView(LibrarianRequiredMixin, DetailView):
 
 class MemberEditView(LibrarianRequiredMixin, UpdateView):
     model = User
-    fields = ['first_name', 'last_name', 'email', 'phone_number', 
-              'address', 'is_active_member', 'membership_expiry']
+    form_class = MemberEditForm
     template_name = 'accounts/member_edit.html'
     
     def get_success_url(self):
