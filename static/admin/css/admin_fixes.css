@@ -1,0 +1,66 @@
+/* Fix for invisible text in Django admin */
+.help-text,
+.help,
+.helptext,
+p.help {
+    color: #666666 !important;
+    background-color: transparent !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    margin: 5px 0 !important;
+}
+
+/* Ensure form help text is visible */
+.form-row .help,
+.form-row .helptext {
+    color: #666666 !important;
+    background: none !important;
+}
+
+/* Fix for admin index help text */
+.module h2 + p,
+.module .help-text {
+    color: #333333 !important;
+    background-color: #f8f9fa !important;
+    padding: 10px !important;
+    border-left: 3px solid #007cba !important;
+    margin: 10px 0 !important;
+}
+
+/* Custom styling for admin documentation */
+.admin-help-section {
+    background-color: #f8f9fa !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 5px !important;
+    padding: 15px !important;
+    margin: 15px 0 !important;
+    color: #333333 !important;
+}
+
+.admin-help-section h3 {
+    color: #007cba !important;
+    margin-top: 0 !important;
+    margin-bottom: 10px !important;
+}
+
+.admin-help-section ul {
+    margin-left: 20px !important;
+    color: #555555 !important;
+}
+
+.admin-help-section li {
+    margin-bottom: 5px !important;
+    color: #555555 !important;
+}
+
+/* Fix for dark text on dark backgrounds */
+.dashboard .module table th,
+.dashboard .module table td {
+    color: #333333 !important;
+}
+
+/* Ensure all admin text is readable */
+.admin-index .app-list .module h2,
+.admin-index .app-list .module h3 {
+    color: #333333 !important;
+}
