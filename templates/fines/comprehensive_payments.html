@@ -1,0 +1,466 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Payments & Fees - Library Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .payment-card {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        transition: box-shadow 0.2s ease;
+    }
+    .payment-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .payment-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px 8px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .payment-body {
+        padding: 20px;
+    }
+    .total-card {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        color: white;
+        border: none;
+    }
+    .total-card .payment-header {
+        background: rgba(255,255,255,0.1);
+    }
+    .fine-item {
+        border-left: 4px solid #dc3545;
+        background-color: #fff5f5;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 0 5px 5px 0;
+    }
+    .membership-item {
+        border-left: 4px solid #007bff;
+        background-color: #f8f9ff;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 0 5px 5px 0;
+    }
+    .service-item {
+        border-left: 4px solid #28a745;
+        background-color: #f8fff8;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 0 5px 5px 0;
+    }
+    .amount-badge {
+        font-size: 1.2em;
+        font-weight: bold;
+        padding: 8px 15px;
+        border-radius: 20px;
+    }
+    .overdue {
+        background-color: #dc3545;
+        color: white;
+    }
+    .pending {
+        background-color: #ffc107;
+        color: black;
+    }
+    .paid {
+        background-color: #28a745;
+        color: white;
+    }
+    .no-items {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+    }
+    .payment-method-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    .btn-pay {
+        flex: 1;
+        padding: 10px;
+        border-radius: 5px;
+        border: none;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .btn-pay:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .membership-status {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.85em;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+    .status-basic { background-color: #6c757d; color: white; }
+    .status-premium { background-color: #ffd700; color: black; }
+    .status-student { background-color: #17a2b8; color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-credit-card me-2"></i>
+                    My Payments & Fees
+                </h2>
+                <div>
+                    <span class="membership-status status-{{ user_membership }}">
+                        {{ user_membership|title }} Member
+                    </span>
+                    {% if membership_expiry %}
+                        <small class="text-muted ms-2">
+                            Expires: {{ membership_expiry|date:"M d, Y" }}
+                        </small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Quick Stats -->
+        <div class="col-md-12 mb-4">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card text-center border-danger">
+                        <div class="card-body">
+                            <h4 class="text-danger">MVR {{ totals.fines|floatformat:2 }}</h4>
+                            <small class="text-muted">Outstanding Fines</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center border-primary">
+                        <div class="card-body">
+                            <h4 class="text-primary">MVR {{ totals.membership|floatformat:2 }}</h4>
+                            <small class="text-muted">Membership Fees</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center border-success">
+                        <div class="card-body">
+                            <h4 class="text-success">MVR {{ totals.priority|floatformat:2 }}</h4>
+                            <small class="text-muted">Priority Reservations</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Outstanding Fines -->
+        <div class="col-lg-6 mb-4">
+            <div class="payment-card">
+                <div class="payment-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Outstanding Fines ({{ outstanding_fines.count }})
+                    </h5>
+                    <span class="amount-badge overdue">MVR {{ totals.fines|floatformat:2 }}</span>
+                </div>
+                <div class="payment-body">
+                    {% if outstanding_fines %}
+                        {% for fine in outstanding_fines %}
+                            <div class="fine-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ fine.get_fine_type_display }}</h6>
+                                        <p class="mb-1 text-muted">{{ fine.description }}</p>
+                                        <small class="text-muted">
+                                            Due: {{ fine.due_date|date:"M d, Y" }}
+                                            {% if fine.is_overdue_fine %}
+                                                <span class="badge bg-danger ms-2">OVERDUE</span>
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <strong class="text-danger">MVR {{ fine.balance|floatformat:2 }}</strong>
+                                        {% if fine.amount_paid > 0 %}
+                                            <br><small class="text-success">Paid: MVR {{ fine.amount_paid|floatformat:2 }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="payment-method-buttons">
+                                    <button class="btn-pay" style="background-color: #dc3545; color: white;"
+                                            onclick="payFine({{ fine.id }}, 'card')">
+                                        <i class="fas fa-credit-card me-1"></i> Pay Now
+                                    </button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-items">
+                            <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                            <p>No outstanding fines</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Membership & Renewals -->
+        <div class="col-lg-6 mb-4">
+            <div class="payment-card">
+                <div class="payment-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-id-card me-2"></i>
+                        Membership & Renewals
+                    </h5>
+                    <span class="amount-badge pending">MVR {{ totals.membership|floatformat:2 }}</span>
+                </div>
+                <div class="payment-body">
+                    {% if membership_renewals %}
+                        {% for renewal in membership_renewals %}
+                            <div class="membership-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">
+                                            Membership Renewal: {{ renewal.get_requested_membership_type_display }}
+                                        </h6>
+                                        <p class="mb-1 text-muted">
+                                            From {{ renewal.user.get_membership_type_display }} to {{ renewal.get_requested_membership_type_display }}
+                                        </p>
+                                        <small class="text-muted">
+                                            Requested: {{ renewal.created_at|date:"M d, Y" }}
+                                            <span class="badge bg-{{ renewal.status|yesno:'success,warning' }} ms-2">
+                                                {{ renewal.get_status_display }}
+                                            </span>
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <strong class="text-primary">
+                                            MVR {{ renewal.renewal_amount|floatformat:2 }}
+                                        </strong>
+                                    </div>
+                                </div>
+                                {% if renewal.status == 'pending' %}
+                                    <div class="payment-method-buttons">
+                                        <button class="btn-pay" style="background-color: #007bff; color: white;"
+                                                onclick="payMembership({{ renewal.id }}, 'card')">
+                                            <i class="fas fa-credit-card me-1"></i> Pay Now
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-items">
+                            <i class="fas fa-user-check text-primary fa-3x mb-3"></i>
+                            <p>No pending renewals</p>
+                            <a href="{% url 'fines:membership_renewal' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-plus me-1"></i> Renew Membership
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Priority Reservations -->
+        <div class="col-lg-6 mb-4">
+            <div class="payment-card">
+                <div class="payment-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-star me-2"></i>
+                        Priority Reservations
+                    </h5>
+                    <span class="amount-badge" style="background-color: #28a745; color: white;">
+                        MVR {{ totals.priority|add:totals.priority_books|floatformat:2 }}
+                    </span>
+                </div>
+                <div class="payment-body">
+                    {% if priority_reservations or priority_book_reservations %}
+                        <!-- Priority Reservations from Fines App -->
+                        {% for priority in priority_reservations %}
+                            <div class="service-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">Priority Reservation</h6>
+                                        <p class="mb-1 text-muted">{{ priority.description }}</p>
+                                        <small class="text-muted">
+                                            Created: {{ priority.created_date|date:"M d, Y" }}
+                                            <span class="badge bg-{{ priority.status|yesno:'success,warning' }} ms-2">
+                                                {{ priority.get_status_display }}
+                                            </span>
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <strong class="text-success">
+                                            MVR {{ priority.amount|floatformat:2 }}
+                                        </strong>
+                                    </div>
+                                </div>
+                                {% if not priority.is_paid %}
+                                    <div class="payment-method-buttons">
+                                        <button class="btn-pay" style="background-color: #28a745; color: white;"
+                                                onclick="payPriorityReservation({{ priority.id }}, 'card')">
+                                            <i class="fas fa-credit-card me-1"></i> Pay Now
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <!-- Priority Book Reservations from Books App -->
+                        {% for book_priority in priority_book_reservations %}
+                            <div class="service-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">Priority Book Reservation</h6>
+                                        <p class="mb-1 text-muted">
+                                            <strong>{{ book_priority.book.title }}</strong>
+                                            {% if book_priority.book.author %}
+                                                by {{ book_priority.book.author }}
+                                            {% endif %}
+                                        </p>
+                                        <small class="text-muted">
+                                            Reserved: {{ book_priority.reserved_at|date:"M d, Y g:i A" }}
+                                            <span class="badge bg-warning ms-2">AWAITING PAYMENT</span>
+                                            <br>Queue Position: #{{ book_priority.queue_position }}
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <strong class="text-success">
+                                            MVR {{ book_priority.payment_required|floatformat:2 }}
+                                        </strong>
+                                    </div>
+                                </div>
+                                <div class="payment-method-buttons">
+                                    <form method="post" action="{% url 'fines:pay_priority_book_reservation' book_priority.id %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="payment_method" value="online">
+                                        <button type="submit" class="btn-pay" style="background-color: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                                            <i class="fas fa-credit-card me-1"></i> Pay Now
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-items">
+                            <i class="fas fa-star text-success fa-3x mb-3"></i>
+                            <p>No priority reservations</p>
+                            <a href="{% url 'books:search' %}" class="btn btn-outline-success">
+                                <i class="fas fa-plus me-1"></i> Make Priority Reservation
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Payment History -->
+        <div class="col-lg-6 mb-4">
+            <div class="payment-card">
+                <div class="payment-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Recent Payments
+                    </h5>
+                    <a href="{% url 'fines:payment_history' %}" class="btn btn-sm btn-outline-light">
+                        View All
+                    </a>
+                </div>
+                <div class="payment-body">
+                    {% if recent_payments %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Method</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for payment in recent_payments %}
+                                        <tr>
+                                            <td>{{ payment.payment_date|date:"M d" }}</td>
+                                            <td>{{ payment.fine.get_fine_type_display }}</td>
+                                            <td class="text-success">MVR {{ payment.amount|floatformat:2 }}</td>
+                                            <td>
+                                                <span class="badge bg-secondary">
+                                                    {{ payment.get_payment_method_display }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="no-items">
+                            <i class="fas fa-receipt text-muted fa-3x mb-3"></i>
+                            <p>No payment history yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <div class="btn-group" role="group">
+                <a href="{% url 'fines:payment_history' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-history me-2"></i>Full Payment History
+                </a>
+                <a href="{% url 'fines:membership_renewal' %}" class="btn btn-outline-success">
+                    <i class="fas fa-id-card me-2"></i>Renew Membership
+                </a>
+                <a href="{% url 'fines:priority_reservations' %}" class="btn btn-outline-info">
+                    <i class="fas fa-star me-2"></i>Priority Reservations
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function payFine(fineId, method) {
+    // Redirect to the fine payment page
+    window.location.href = `{% url 'fines:pay' 0 %}`.replace('0', fineId);
+}
+
+function payMembership(renewalId, method) {
+    // Redirect to membership renewal payment 
+    window.location.href = `{% url 'fines:process_renewal' 0 %}`.replace('0', renewalId);
+}
+
+function payPriorityReservation(priorityId, method) {
+    // For now, simulate payment processing
+    if (confirm(`Pay priority reservation (MVR 20.00) via ${method}?`)) {
+        alert(`Priority reservation payment processed! You now have queue priority.`);
+        // In a real implementation, this would process the payment
+        location.reload();
+    }
+}
+
+// Auto-refresh page every 30 seconds to show updated payment status
+setTimeout(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

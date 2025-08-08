@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pay Priority Reservation - LMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-primary">
+                    <i class="fas fa-credit-card"></i> Pay Priority Reservation
+                </h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'fines:payments' %}">Payments</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'fines:priority_reservations' %}">Priority Reservations</a></li>
+                        <li class="breadcrumb-item active">Pay</li>
+                    </ol>
+                </nav>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Priority Reservation Details -->
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-star"></i> Priority Reservation Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Book:</strong></p>
+                            {% if priority_reservation.reservation %}
+                                <p class="text-muted">{{ priority_reservation.reservation.book_copy.book.title }}</p>
+                                <p><strong>ISBN:</strong> <code>{{ priority_reservation.reservation.book_copy.book.isbn }}</code></p>
+                            {% else %}
+                                <p class="text-muted">General priority reservation</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Created:</strong> {{ priority_reservation.created_date|date:"M d, Y g:i A" }}</p>
+                            <p><strong>Amount:</strong> <span class="text-success fw-bold">MVR {{ priority_reservation.amount|floatformat:2 }}</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Priority Benefit:</strong> Once paid, you will be moved to #1 position in the reservation queue for this book.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Form -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-payment"></i> Payment Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="paymentForm">
+                        {% csrf_token %}
+                        
+                        <!-- Payment Method Selection -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Select Payment Method</label>
+                            <div class="row g-3">
+                                {% for method_value, method_name in payment_methods %}
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="payment_method" 
+                                                   id="method_{{ method_value }}" value="{{ method_value }}" 
+                                                   {% if forloop.first %}checked{% endif %}>
+                                            <label class="form-check-label" for="method_{{ method_value }}">
+                                                <i class="fas fa-{% if method_value == 'cash' %}money-bill-wave{% elif method_value == 'card' %}credit-card{% elif method_value == 'bank_transfer' %}university{% elif method_value == 'mobile_payment' %}mobile-alt{% else %}globe{% endif %}"></i>
+                                                {{ method_name }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Payment Summary -->
+                        <div class="alert alert-light border mb-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h6 class="mb-0">Priority Reservation Fee</h6>
+                                    <small class="text-muted">Queue priority access</small>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <h5 class="mb-0 text-success">MVR {{ priority_reservation.amount|floatformat:2 }}</h5>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Notes -->
+                        <div class="mb-4">
+                            <label for="notes" class="form-label">Payment Notes (Optional)</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                      placeholder="Any additional notes about this payment..."></textarea>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <a href="{% url 'fines:priority_reservations' %}" class="btn btn-secondary w-100">
+                                    <i class="fas fa-arrow-left"></i> Cancel
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-success w-100" id="payButton">
+                                    <i class="fas fa-credit-card"></i> Pay MVR {{ priority_reservation.amount|floatformat:2 }}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Payment Information -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h6 class="card-title text-info">
+                        <i class="fas fa-shield-alt"></i> Payment Security
+                    </h6>
+                    <ul class="list-unstyled mb-0 small text-muted">
+                        <li><i class="fas fa-check text-success"></i> All payments are processed securely</li>
+                        <li><i class="fas fa-check text-success"></i> Receipt will be generated automatically</li>
+                        <li><i class="fas fa-check text-success"></i> Priority status applied immediately upon payment</li>
+                        <li><i class="fas fa-check text-success"></i> Full payment history maintained</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('paymentForm').addEventListener('submit', function(e) {
+    const payButton = document.getElementById('payButton');
+    const selectedMethod = document.querySelector('input[name="payment_method"]:checked');
+    
+    if (!selectedMethod) {
+        e.preventDefault();
+        alert('Please select a payment method.');
+        return;
+    }
+    
+    // Show loading state
+    payButton.disabled = true;
+    payButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing Payment...';
+    
+    // Add small delay to show loading state
+    setTimeout(() => {
+        // Form will submit normally
+    }, 500);
+});
+
+// Add visual feedback for payment method selection
+document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        // Remove active class from all
+        document.querySelectorAll('.form-check').forEach(div => {
+            div.classList.remove('border', 'border-primary', 'bg-light');
+        });
+        
+        // Add active class to selected
+        if (this.checked) {
+            this.closest('.form-check').classList.add('border', 'border-primary', 'bg-light');
+        }
+    });
+});
+
+// Initialize first option as selected
+document.addEventListener('DOMContentLoaded', function() {
+    const firstRadio = document.querySelector('input[name="payment_method"]:checked');
+    if (firstRadio) {
+        firstRadio.closest('.form-check').classList.add('border', 'border-primary', 'bg-light');
+    }
+});
+</script>
+
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.form-check {
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+}
+
+.form-check:hover {
+    background-color: #f8f9fa;
+}
+
+.form-check-input:checked + .form-check-label {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.alert {
+    border-radius: 0.375rem;
+}
+
+.btn {
+    border-radius: 0.375rem;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+}
+
+.text-success {
+    color: #198754 !important;
+}
+</style>
+{% endblock %}

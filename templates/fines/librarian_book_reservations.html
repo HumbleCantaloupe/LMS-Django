@@ -1,0 +1,432 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Book Reservations Management - Library Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reservation-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #dee2e6;
+    }
+    
+    .reservation-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .reservation-card.pending {
+        border-left-color: #ffc107;
+    }
+    
+    .reservation-card.approved {
+        border-left-color: #28a745;
+    }
+    
+    .reservation-card.rejected {
+        border-left-color: #dc3545;
+    }
+    
+    .reservation-card.priority {
+        border-left-color: #6f42c1;
+    }
+    
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-approved {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .status-rejected {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .type-priority {
+        background-color: #e2d9f3;
+        color: #6f42c1;
+    }
+    
+    .type-standard {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .stats-cards .card {
+        border: none;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .stats-cards .card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .search-filters {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="fas fa-calendar-check text-success me-2"></i>
+                        Book Reservations Management
+                    </h1>
+                    <p class="text-muted mb-0">Approve and manage book reservations from users</p>
+                </div>
+                <div>
+                    <a href="{% url 'fines:librarian_membership_management' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Management
+                    </a>
+                    <a href="{% url 'fines:librarian_book_inventory' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-books me-2"></i>Book Inventory
+                    </a>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row stats-cards mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-list fa-2x mb-2"></i>
+                            <h4>{{ total_reservations }}</h4>
+                            <p class="mb-0">Total Reservations</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-clock fa-2x mb-2"></i>
+                            <h4>{{ pending_reservations }}</h4>
+                            <p class="mb-0">Pending</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-check-circle fa-2x mb-2"></i>
+                            <h4>{{ approved_reservations }}</h4>
+                            <p class="mb-0">Approved</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-purple text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-star fa-2x mb-2"></i>
+                            <h4>{{ priority_reservations }}</h4>
+                            <p class="mb-0">Priority</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="search-filters">
+                <form method="get" class="row align-items-end">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               placeholder="Username or book title" value="{{ search_term }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">All Statuses</option>
+                            <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="approved" {% if selected_status == 'approved' %}selected{% endif %}>Approved</option>
+                            <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="reservation_type" class="form-label">Type</label>
+                        <select class="form-select" id="reservation_type" name="reservation_type">
+                            <option value="">All Types</option>
+                            <option value="standard" {% if selected_type == 'standard' %}selected{% endif %}>Standard</option>
+                            <option value="priority" {% if selected_type == 'priority' %}selected{% endif %}>Priority</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-1"></i>Search
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Reservations List -->
+            {% if reservations %}
+                <div class="row">
+                    {% for reservation in reservations %}
+                    <div class="col-12 mb-3">
+                        <div class="card reservation-card {{ reservation.status }} {% if reservation.reservation_type == 'priority' %}priority{% endif %}">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <!-- User Info -->
+                                    <div class="col-md-3">
+                                        <h5 class="card-title mb-1">
+                                            <i class="fas fa-user me-2"></i>
+                                            {{ reservation.user.get_full_name|default:reservation.user.username }}
+                                        </h5>
+                                        <p class="text-muted mb-0">
+                                            <strong>Username:</strong> {{ reservation.user.username }}
+                                        </p>
+                                    </div>
+
+                                    <!-- Book Info -->
+                                    <div class="col-md-4">
+                                        <h6 class="mb-1">
+                                            <i class="fas fa-book me-2"></i>
+                                            {{ reservation.book.title }}
+                                        </h6>
+                                        <p class="mb-1 text-muted">
+                                            <strong>Author:</strong> {{ reservation.book.authors }}
+                                        </p>
+                                        <p class="mb-0 text-muted">
+                                            <strong>ISBN:</strong> {{ reservation.book.isbn }}
+                                        </p>
+                                    </div>
+
+                                    <!-- Reservation Info -->
+                                    <div class="col-md-2">
+                                        <p class="mb-1">
+                                            <strong>Reserved:</strong><br>
+                                            {{ reservation.reserved_at|date:"M d, Y" }}
+                                        </p>
+                                        <p class="mb-0">
+                                            <span class="type-{{ reservation.reservation_type }} status-badge">
+                                                {% if reservation.reservation_type == 'priority' %}
+                                                    <i class="fas fa-star me-1"></i>Priority
+                                                {% else %}
+                                                    <i class="fas fa-clock me-1"></i>Standard
+                                                {% endif %}
+                                            </span>
+                                        </p>
+                                    </div>
+
+                                    <!-- Status -->
+                                    <div class="col-md-2">
+                                        <span class="status-badge status-{{ reservation.status }}">
+                                            <i class="fas fa-{% if reservation.status == 'approved' %}check{% elif reservation.status == 'rejected' %}times{% else %}clock{% endif %}"></i>
+                                            {{ reservation.get_status_display }}
+                                        </span>
+                                        {% if reservation.notes %}
+                                            <br><small class="text-muted">{{ reservation.notes|truncatechars:30 }}</small>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="col-md-1">
+                                        {% if reservation.status == 'pending' %}
+                                            <div class="btn-group-vertical" role="group">
+                                                <button class="btn btn-sm btn-success mb-1" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#approveModal"
+                                                        onclick="prepareApproval('{{ reservation.id }}', '{{ reservation.user.username }}', '{{ reservation.book.title|escapejs }}', 'approve')"
+                                                        title="Approve">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#rejectModal"
+                                                        onclick="prepareApproval('{{ reservation.id }}', '{{ reservation.user.username }}', '{{ reservation.book.title|escapejs }}', 'reject')"
+                                                        title="Reject">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-{% if reservation.status == 'approved' %}success{% else %}danger{% endif %}">
+                                                <i class="fas fa-{% if reservation.status == 'approved' %}check-circle{% else %}times-circle{% endif %} fa-lg"></i>
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                    <nav aria-label="Reservations pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                                        <i class="fas fa-chevron-left"></i> Previous
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                                        Next <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-calendar-check fa-5x text-muted"></i>
+                    </div>
+                    <h4 class="text-muted">No Reservations Found</h4>
+                    <p class="text-muted">No reservations match your current filters.</p>
+                    <a href="{% url 'fines:librarian_book_reservations' %}" class="btn btn-primary">
+                        <i class="fas fa-refresh me-2"></i>Clear Filters
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Approve Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approveModalLabel">
+                    <i class="fas fa-check me-2"></i>Approve Reservation
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" id="approveForm" action="">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="approve">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <strong>User:</strong> <span id="approveUsername"></span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Book:</strong> <span id="approveBookTitle"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label for="approveNotes" class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="approveNotes" name="notes" rows="3" placeholder="Any notes about the approval..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check me-2"></i>Approve Reservation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rejectModalLabel">
+                    <i class="fas fa-times me-2"></i>Reject Reservation
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" id="rejectForm" action="">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reject">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <strong>User:</strong> <span id="rejectUsername"></span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Book:</strong> <span id="rejectBookTitle"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rejectNotes" class="form-label">Reason for Rejection</label>
+                        <textarea class="form-control" id="rejectNotes" name="notes" rows="3" placeholder="Please provide a reason for rejection..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-times me-2"></i>Reject Reservation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    function prepareApproval(reservationId, username, bookTitle, action) {
+        if (action === 'approve') {
+            document.getElementById('approveForm').action = "{% url 'fines:librarian_approve_reservation' 0 %}".replace('0', reservationId);
+            document.getElementById('approveUsername').textContent = username;
+            document.getElementById('approveBookTitle').textContent = bookTitle;
+        } else if (action === 'reject') {
+            document.getElementById('rejectForm').action = "{% url 'fines:librarian_approve_reservation' 0 %}".replace('0', reservationId);
+            document.getElementById('rejectUsername').textContent = username;
+            document.getElementById('rejectBookTitle').textContent = bookTitle;
+        }
+    }
+    
+    // Auto-submit form on filter changes
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusSelect = document.getElementById('status');
+        const typeSelect = document.getElementById('reservation_type');
+        
+        statusSelect.addEventListener('change', function() {
+            this.form.submit();
+        });
+        
+        typeSelect.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+</script>
+
+<style>
+.bg-purple {
+    background-color: #6f42c1 !important;
+}
+</style>
+{% endblock %}
+{% endblock %}

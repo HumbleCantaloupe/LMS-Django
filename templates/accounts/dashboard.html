@@ -1,0 +1,282 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Library Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="bi bi-speedometer2"></i> 
+            {% if user.is_librarian %}Librarian{% else %}Member{% endif %} Dashboard
+        </h2>
+    </div>
+</div>
+
+{% if user.is_librarian %}
+<!-- Librarian Dashboard -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3>{{ total_active_loans }}</h3>
+                        <p>Active Loans</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-book fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3>{{ overdue_books }}</h3>
+                        <p>Overdue Books</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-clock fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3>{{ pending_reservations }}</h3>
+                        <p>Pending Reservations</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-bookmark fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3>{{ pending_fines }}</h3>
+                        <p>Pending Fines</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-exclamation-triangle fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <a href="{% url 'borrowing:borrow' %}" class="btn btn-outline-primary">
+                                <i class="bi bi-plus-circle"></i><br>Issue Book
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <a href="{% url 'borrowing:return' %}" class="btn btn-outline-success">
+                                <i class="bi bi-arrow-return-left"></i><br>Return Book
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <a href="{% url 'accounts:member_list' %}" class="btn btn-outline-info">
+                                <i class="bi bi-people"></i><br>Manage Members
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <a href="/admin/" class="btn btn-outline-warning">
+                                <i class="bi bi-gear"></i><br>Admin Panel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Member Dashboard -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3>{{ user_current_borrowings }}</h3>
+                        <p>Current Borrowings</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-book fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3>{{ user_reservations }}</h3>
+                        <p>Active Reservations</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-bookmark fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3>{{ user_pending_fines }}</h3>
+                        <p>Pending Fines</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-exclamation-triangle fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Current Borrowings -->
+{% if current_borrowings %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Current Borrowings</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Book</th>
+                                <th>Borrowed Date</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for borrowing in current_borrowings %}
+                            <tr>
+                                <td>
+                                    <strong>{{ borrowing.book_copy.book.title }}</strong><br>
+                                    <small class="text-muted">
+                                        {% for author in borrowing.book_copy.book.authors.all %}
+                                            {{ author.full_name }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </small>
+                                </td>
+                                <td>{{ borrowing.borrowed_at|date:"M d, Y" }}</td>
+                                <td>
+                                    {{ borrowing.due_date|date:"M d, Y" }}
+                                    {% if borrowing.is_overdue %}
+                                        <span class="badge bg-danger">Overdue</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ borrowing.get_status_display }}</span>
+                                </td>
+                                <td>
+                                    {% if borrowing.can_renew %}
+                                    <a href="{% url 'borrowing:renew' borrowing.pk %}" class="btn btn-sm btn-outline-primary">
+                                        Renew
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Actions for Members -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <a href="{% url 'books:book_list' %}" class="btn btn-outline-primary">
+                                <i class="bi bi-search"></i><br>Browse Books
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <a href="{% url 'borrowing:current' %}" class="btn btn-outline-success">
+                                <i class="bi bi-book"></i><br>My Borrowings
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <a href="{% url 'fines:fine_list' %}" class="btn btn-outline-warning">
+                                <i class="bi bi-exclamation-triangle"></i><br>My Fines
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <a href="{% url 'accounts:profile' %}" class="btn btn-outline-info">
+                                <i class="bi bi-person"></i><br>My Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}

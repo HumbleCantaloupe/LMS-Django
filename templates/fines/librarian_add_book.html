@@ -1,0 +1,418 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Add New Book - Library Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .add-book-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .book-form {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        padding: 30px;
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+    }
+    
+    .section-title {
+        color: #2c3e50;
+        border-bottom: 2px solid #27ae60;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .form-control:focus {
+        border-color: #27ae60;
+        box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.25);
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #27ae60, #2ecc71);
+        border: none;
+        border-radius: 25px;
+        padding: 10px 25px;
+    }
+    
+    .btn-secondary {
+        background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        border: none;
+        border-radius: 25px;
+        padding: 10px 25px;
+    }
+    
+    .preview-area {
+        border: 2px dashed #ddd;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        color: #888;
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="add-book-container">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-0">
+                    <i class="fas fa-plus-circle text-success me-2"></i>
+                    Add New Book
+                </h2>
+                <p class="text-muted mt-2">
+                    Add a new book to the library inventory
+                </p>
+            </div>
+            <a href="{% url 'fines:librarian_book_inventory' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Inventory
+            </a>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Add Book Form -->
+        <div class="book-form">
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Basic Information -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-info-circle me-2"></i>Basic Information
+                    </h4>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="title" name="title" required
+                                       placeholder="Enter the book title">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="authors" class="form-label">Authors <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="authors" name="authors" required
+                                       placeholder="Separate multiple authors with commas">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="isbn" class="form-label">ISBN <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="isbn" name="isbn" required
+                                       placeholder="978-XXXXXXXXXX">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="preview-area">
+                                <i class="fas fa-book fa-3x mb-2"></i>
+                                <p class="mb-0">Cover Image</p>
+                                <small class="text-muted">Upload available in future updates</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Publication Details -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-calendar-alt me-2"></i>Publication Details
+                    </h4>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <select class="form-select" id="category" name="category">
+                                    <option value="">Select Category</option>
+                                    {% for category in categories %}
+                                        <option value="{{ category.id }}">{{ category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="publisher" class="form-label">Publisher</label>
+                                <select class="form-select" id="publisher" name="publisher">
+                                    <option value="">Select Publisher</option>
+                                    {% for publisher in publishers %}
+                                        <option value="{{ publisher.id }}">{{ publisher.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="publication_date" class="form-label">Publication Date</label>
+                                <input type="date" class="form-control" id="publication_date" name="publication_date">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="pages" class="form-label">Number of Pages</label>
+                                <input type="number" class="form-control" id="pages" name="pages" 
+                                       min="1" placeholder="e.g., 320">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-file-alt me-2"></i>Description
+                    </h4>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Book Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="5" 
+                                  placeholder="Enter a brief description of the book, including plot summary, themes, or key topics..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Copies & Branch Management -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-building me-2"></i>Initial Copies & Branch Distribution
+                    </h4>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <p class="text-muted mb-3">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Specify how many copies to add to each library branch when creating this book.
+                            </p>
+                            
+                            <div id="branch-copies-container">
+                                {% for branch in branches %}
+                                <div class="branch-copy-row mb-3" data-branch-id="{{ branch.id }}">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-5">
+                                            <label class="form-label">
+                                                <i class="fas fa-map-marker-alt me-1 text-primary"></i>
+                                                <strong>{{ branch.name }}</strong> 
+                                                <small class="text-muted">({{ branch.get_location_display }})</small>
+                                            </label>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="copies_{{ branch.id }}" class="form-label">Copies</label>
+                                            <input type="number" class="form-control" 
+                                                   id="copies_{{ branch.id }}" 
+                                                   name="copies_{{ branch.id }}" 
+                                                   min="0" max="50" value="0"
+                                                   placeholder="0">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="condition_{{ branch.id }}" class="form-label">Condition</label>
+                                            <select class="form-select" 
+                                                    id="condition_{{ branch.id }}" 
+                                                    name="condition_{{ branch.id }}">
+                                                <option value="excellent">Excellent</option>
+                                                <option value="good" selected>Good</option>
+                                                <option value="fair">Fair</option>
+                                                <option value="poor">Poor</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body p-3">
+                                            <h6 class="card-title text-success mb-2">
+                                                <i class="fas fa-lightbulb me-1"></i>Quick Add Options
+                                            </h6>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="setAllCopies(1)">
+                                                    1 to All
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="setAllCopies(2)">
+                                                    2 to All
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="setAllCopies(5)">
+                                                    5 to All
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setAllCopies(0)">
+                                                    Clear All
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="alert alert-info mb-0">
+                                        <small>
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            You can add more copies later by editing the book. Leave as 0 to create the book without physical copies.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Section -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-eye me-2"></i>Preview
+                    </h4>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">Book Information</h6>
+                                    <p class="mb-1"><strong>Title:</strong> <span id="preview-title" class="text-muted">Enter title...</span></p>
+                                    <p class="mb-1"><strong>Authors:</strong> <span id="preview-authors" class="text-muted">Enter authors...</span></p>
+                                    <p class="mb-1"><strong>ISBN:</strong> <span id="preview-isbn" class="text-muted">Enter ISBN...</span></p>
+                                    <p class="mb-0"><strong>Pages:</strong> <span id="preview-pages" class="text-muted">Enter page count...</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">Publication Details</h6>
+                                    <p class="mb-1"><strong>Category:</strong> <span id="preview-category" class="text-muted">Select category...</span></p>
+                                    <p class="mb-1"><strong>Publisher:</strong> <span id="preview-publisher" class="text-muted">Select publisher...</span></p>
+                                    <p class="mb-1"><strong>Publication Date:</strong> <span id="preview-date" class="text-muted">Select date...</span></p>
+                                    <p class="mb-0"><strong>Total Copies:</strong> <span id="preview-copies" class="text-muted">No copies specified</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted">
+                        <small>
+                            <i class="fas fa-info-circle me-1"></i>
+                            Fields marked with <span class="text-danger">*</span> are required
+                        </small>
+                    </div>
+                    
+                    <div>
+                        <a href="{% url 'fines:librarian_book_inventory' %}" class="btn btn-secondary me-2">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-plus me-1"></i>Add Book
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Quick add functions for copies
+    function setAllCopies(count) {
+        const copyInputs = document.querySelectorAll('[id^="copies_"]');
+        copyInputs.forEach(input => {
+            input.value = count;
+        });
+        updatePreviewCopies();
+    }
+    
+    function updatePreviewCopies() {
+        const copyInputs = document.querySelectorAll('[id^="copies_"]');
+        let totalCopies = 0;
+        copyInputs.forEach(input => {
+            if (input.value && !isNaN(input.value)) {
+                totalCopies += parseInt(input.value);
+            }
+        });
+        
+        const previewElement = document.getElementById('preview-copies');
+        if (previewElement) {
+            previewElement.textContent = totalCopies > 0 ? `${totalCopies} total copies` : 'No copies specified';
+        }
+    }
+
+    // Live preview updates
+    document.getElementById('title').addEventListener('input', function() {
+        document.getElementById('preview-title').textContent = this.value || 'Enter title...';
+    });
+    
+    document.getElementById('authors').addEventListener('input', function() {
+        document.getElementById('preview-authors').textContent = this.value || 'Enter authors...';
+    });
+    
+    document.getElementById('isbn').addEventListener('input', function() {
+        document.getElementById('preview-isbn').textContent = this.value || 'Enter ISBN...';
+    });
+    
+    document.getElementById('pages').addEventListener('input', function() {
+        document.getElementById('preview-pages').textContent = this.value ? this.value + ' pages' : 'Enter page count...';
+    });
+    
+    document.getElementById('category').addEventListener('change', function() {
+        const selected = this.options[this.selectedIndex];
+        document.getElementById('preview-category').textContent = selected.text || 'Select category...';
+    });
+    
+    document.getElementById('publisher').addEventListener('change', function() {
+        const selected = this.options[this.selectedIndex];
+        document.getElementById('preview-publisher').textContent = selected.text || 'Select publisher...';
+    });
+    
+    document.getElementById('publication_date').addEventListener('change', function() {
+        document.getElementById('preview-date').textContent = this.value || 'Select date...';
+    });
+    
+    // Update copies preview when inputs change
+    document.addEventListener('input', function(e) {
+        if (e.target.id && e.target.id.startsWith('copies_')) {
+            updatePreviewCopies();
+        }
+    });
+
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const title = document.getElementById('title').value.trim();
+        const authors = document.getElementById('authors').value.trim();
+        const isbn = document.getElementById('isbn').value.trim();
+        
+        if (!title || !authors || !isbn) {
+            e.preventDefault();
+            alert('Please fill in all required fields (Title, Authors, ISBN).');
+            return false;
+        }
+        
+        // ISBN basic validation
+        const isbnPattern = /^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$/;
+        if (!isbnPattern.test(isbn.replace(/[- ]/g, ''))) {
+            e.preventDefault();
+            alert('Please enter a valid ISBN number.');
+            return false;
+        }
+    });
+</script>
+{% endblock %}

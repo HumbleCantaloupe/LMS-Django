@@ -1,0 +1,429 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Membership Renewal - Library Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .membership-card {
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .membership-card:hover {
+        border-color: #007bff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .membership-card.selected {
+        border-color: #007bff;
+        background-color: #f8f9ff;
+    }
+    
+    .price-badge {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .late-fee {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    
+    .renewal-summary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+    }
+    
+    .payment-method-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .payment-method-card:hover {
+        border-color: #007bff;
+        background-color: #f8f9ff;
+    }
+    
+    .payment-method-card.selected {
+        border-color: #007bff;
+        background-color: #f8f9ff;
+    }
+    
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .status-expired {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .status-expiring {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    
+    .status-active {
+        background-color: #28a745;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="fas fa-credit-card text-primary me-2"></i>
+                        Membership Renewal
+                    </h1>
+                    <p class="text-muted mb-0">Renew your library membership</p>
+                </div>
+                <div>
+                    <a href="{% url 'fines:membership' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Membership
+                    </a>
+                </div>
+            </div>
+
+            <!-- Current Membership Status -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-user-circle me-2"></i>Current Membership Status
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Membership Type:</strong> {{ current_membership }}</p>
+                            <p><strong>Expiry Date:</strong> 
+                                {% if membership_expiry %}
+                                    {{ membership_expiry|date:"F d, Y" }}
+                                    {% if is_expired %}
+                                        <span class="status-badge status-expired ms-2">
+                                            <i class="fas fa-exclamation-triangle"></i> Expired
+                                        </span>
+                                    {% elif membership_expiry|date:"U"|add:"-604800" < "now"|date:"U" %}
+                                        <span class="status-badge status-expiring ms-2">
+                                            <i class="fas fa-clock"></i> Expiring Soon
+                                        </span>
+                                    {% else %}
+                                        <span class="status-badge status-active ms-2">
+                                            <i class="fas fa-check"></i> Active
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">Not set</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            {% if is_expired %}
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>Membership Expired!</strong> Please renew to continue using library services.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Renewal Alert -->
+            {% if pending_renewal %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>Pending Renewal:</strong> You have a pending renewal request for MVR {{ pending_renewal.total_amount }}.
+                Status: {{ pending_renewal.get_status_display }}
+            </div>
+            {% endif %}
+
+            <!-- Renewal Form -->
+            <form method="post" id="renewalForm">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-lg-8">
+                        <!-- Membership Type Selection -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-star me-2"></i>Select Membership Type
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    {% for type_key, option in membership_options.items %}
+                                    <div class="col-md-4 mb-3">
+                                        <div class="membership-card h-100 p-3" data-membership="{{ type_key }}">
+                                            <input type="radio" name="membership_type" value="{{ type_key }}" 
+                                                   id="membership_{{ type_key }}" class="d-none membership-radio">
+                                            <div class="text-center">
+                                                <h6 class="card-title">{{ option.display_name }}</h6>
+                                                
+                                                <!-- Monthly Pricing -->
+                                                <div class="price-badge text-primary mb-2">
+                                                    MVR {{ option.monthly_fee }}
+                                                    <small class="text-muted">/month</small>
+                                                </div>
+                                                
+                                                {% if option.late_fee > 0 %}
+                                                <div class="late-fee mb-2">
+                                                    + MVR {{ option.late_fee }} Late Fee
+                                                </div>
+                                                {% endif %}
+                                                
+                                                <hr>
+                                                <div class="text-center">
+                                                    <strong class="text-success">
+                                                        Total: MVR {{ option.total_monthly }}
+                                                    </strong>
+                                                </div>
+                                                
+                                                <!-- Membership Benefits -->
+                                                <div class="mt-3 text-start">
+                                                    <small class="text-muted">Benefits:</small>
+                                                    <ul class="list-unstyled small">
+                                                        {% if type_key == 'basic' %}
+                                                            <li><i class="fas fa-check text-success"></i> Borrow up to 3 books</li>
+                                                            <li><i class="fas fa-check text-success"></i> 14-day loan period</li>
+                                                        {% elif type_key == 'premium' %}
+                                                            <li><i class="fas fa-check text-success"></i> Borrow up to 5 books</li>
+                                                            <li><i class="fas fa-check text-success"></i> 14-day + 7-day extension</li>
+                                                            <li><i class="fas fa-star text-warning"></i> Priority reservations</li>
+                                                        {% elif type_key == 'student' %}
+                                                            <li><i class="fas fa-check text-success"></i> Borrow up to 4 books</li>
+                                                            <li><i class="fas fa-check text-success"></i> 21-day loan period</li>
+                                                            <li><i class="fas fa-graduation-cap text-info"></i> Student discount</li>
+                                                        {% endif %}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Method Selection -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-credit-card me-2"></i>Payment Method
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="payment-method-card" data-method="cash">
+                                            <input type="radio" name="payment_method" value="cash" id="payment_cash" class="d-none">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-money-bill-wave fa-2x text-success me-3"></i>
+                                                <div>
+                                                    <h6 class="mb-1">Cash Payment</h6>
+                                                    <small class="text-muted">Pay at library counter</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="payment-method-card" data-method="card">
+                                            <input type="radio" name="payment_method" value="card" id="payment_card" class="d-none">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-credit-card fa-2x text-primary me-3"></i>
+                                                <div>
+                                                    <h6 class="mb-1">Card Payment</h6>
+                                                    <small class="text-muted">Credit/Debit card</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="payment-method-card" data-method="bank_transfer">
+                                            <input type="radio" name="payment_method" value="bank_transfer" id="payment_bank" class="d-none">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-university fa-2x text-info me-3"></i>
+                                                <div>
+                                                    <h6 class="mb-1">Bank Transfer</h6>
+                                                    <small class="text-muted">Direct bank transfer</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="payment-method-card" data-method="mobile_payment">
+                                            <input type="radio" name="payment_method" value="mobile_payment" id="payment_mobile" class="d-none">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-mobile-alt fa-2x text-warning me-3"></i>
+                                                <div>
+                                                    <h6 class="mb-1">Mobile Payment</h6>
+                                                    <small class="text-muted">BML/MIB Mobile</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Renewal Summary -->
+                    <div class="col-lg-4">
+                        <div class="renewal-summary sticky-top">
+                            <h5 class="mb-3">
+                                <i class="fas fa-receipt me-2"></i>Renewal Summary
+                            </h5>
+                            
+                            <div id="summaryContent">
+                                <p class="text-center text-white-50">
+                                    Select a membership type to see pricing details
+                                </p>
+                            </div>
+                            
+                            <div id="summaryDetails" class="d-none">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Membership Type:</span>
+                                    <span id="selectedMembershipName">-</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Monthly Fee:</span>
+                                    <span id="selectedMonthlyFee">MVR 0.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2" id="lateFeeRow" style="display: none;">
+                                    <span>Late Fee:</span>
+                                    <span id="selectedLateFee" class="text-warning">MVR 0.00</span>
+                                </div>
+                                <hr class="border-white-50">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <strong>Total Amount:</strong>
+                                    <strong id="selectedTotalAmount" class="fs-5">MVR 0.00</strong>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <small class="text-white-50">
+                                        <i class="fas fa-info-circle"></i>
+                                        Renewal extends membership by 30 days from current expiry date
+                                    </small>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-light btn-lg w-100" id="renewButton" disabled>
+                                    <i class="fas fa-credit-card me-2"></i>Process Renewal
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const membershipCards = document.querySelectorAll('.membership-card');
+    const paymentCards = document.querySelectorAll('.payment-method-card');
+    const summaryContent = document.getElementById('summaryContent');
+    const summaryDetails = document.getElementById('summaryDetails');
+    const renewButton = document.getElementById('renewButton');
+    
+    const membershipData = {
+        {% for type_key, option in membership_options.items %}
+        '{{ type_key }}': {
+            name: '{{ option.display_name }}',
+            monthlyFee: {{ option.monthly_fee }},
+            lateFee: {{ option.late_fee }},
+            totalAmount: {{ option.total_monthly }}
+        },
+        {% endfor %}
+    };
+    
+    let selectedMembership = null;
+    let selectedPayment = null;
+    
+    // Handle membership selection
+    membershipCards.forEach(card => {
+        card.addEventListener('click', function() {
+            membershipCards.forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+            
+            const membershipType = this.dataset.membership;
+            const radio = document.getElementById(`membership_${membershipType}`);
+            radio.checked = true;
+            selectedMembership = membershipType;
+            
+            updateSummary();
+        });
+    });
+    
+    // Handle payment method selection
+    paymentCards.forEach(card => {
+        card.addEventListener('click', function() {
+            paymentCards.forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+            
+            const paymentMethod = this.dataset.method;
+            const radio = document.getElementById(`payment_${paymentMethod}`);
+            radio.checked = true;
+            selectedPayment = paymentMethod;
+            
+            updateRenewButton();
+        });
+    });
+    
+    function updateSummary() {
+        if (selectedMembership && membershipData[selectedMembership]) {
+            const data = membershipData[selectedMembership];
+            
+            document.getElementById('selectedMembershipName').textContent = data.name;
+            document.getElementById('selectedMonthlyFee').textContent = `MVR ${data.monthlyFee}`;
+            document.getElementById('selectedTotalAmount').textContent = `MVR ${data.totalAmount}`;
+            
+            const lateFeeRow = document.getElementById('lateFeeRow');
+            const lateFeeSpan = document.getElementById('selectedLateFee');
+            
+            if (data.lateFee > 0) {
+                lateFeeRow.style.display = 'flex';
+                lateFeeSpan.textContent = `MVR ${data.lateFee}`;
+            } else {
+                lateFeeRow.style.display = 'none';
+            }
+            
+            summaryContent.classList.add('d-none');
+            summaryDetails.classList.remove('d-none');
+            
+            updateRenewButton();
+        }
+    }
+    
+    function updateRenewButton() {
+        const canProceed = selectedMembership && selectedPayment;
+        renewButton.disabled = !canProceed;
+        
+        if (canProceed) {
+            renewButton.classList.remove('btn-secondary');
+            renewButton.classList.add('btn-primary');
+        } else {
+            renewButton.classList.remove('btn-primary');
+            renewButton.classList.add('btn-secondary');
+        }
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

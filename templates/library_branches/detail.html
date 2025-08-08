@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ branch.name }} - Library Branches{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-building"></i> {{ branch.name }}</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'library_branches:branch_list' %}">Branches</a></li>
+                    <li class="breadcrumb-item active">{{ branch.name }}</li>
+                </ol>
+            </nav>
+        </div>
+        
+        <!-- Branch Overview -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Branch Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Address:</strong><br>{{ branch.address }}</p>
+                                {% if branch.phone %}
+                                <p><strong>Phone:</strong> {{ branch.phone }}</p>
+                                {% endif %}
+                                {% if branch.email %}
+                                <p><strong>Email:</strong> {{ branch.email }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Capacity:</strong> {{ branch.capacity }} visitors</p>
+                                <p><strong>Status:</strong> 
+                                    <span class="badge {% if branch.is_active %}badge-success{% else %}badge-danger{% endif %}">
+                                        {% if branch.is_active %}Active{% else %}Inactive{% endif %}
+                                    </span>
+                                </p>
+                                {% if branch.manager %}
+                                <p><strong>Manager:</strong> {{ branch.manager.get_full_name }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if branch.description %}
+                        <hr>
+                        <p><strong>About this branch:</strong></p>
+                        <p class="text-muted">{{ branch.description }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <!-- Quick Stats -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Quick Stats</h6>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <h4 class="text-primary">{{ branch.book_copies.count }}</h4>
+                            <small class="text-muted">Available Books</small>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="text-success">{{ branch.sections.count }}</h4>
+                            <small class="text-muted">Sections</small>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="text-info">{{ branch.active_borrowings_count }}</h4>
+                            <small class="text-muted">Active Loans</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Services Available -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cogs"></i> Available Services</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="{% if branch.has_wifi %}text-success{% else %}text-muted{% endif %}">
+                            <i class="fas fa-wifi fa-2x mb-2"></i>
+                            <p class="mb-0">WiFi Internet</p>
+                            <small>{% if branch.has_wifi %}Available{% else %}Not Available{% endif %}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="{% if branch.has_computers %}text-success{% else %}text-muted{% endif %}">
+                            <i class="fas fa-desktop fa-2x mb-2"></i>
+                            <p class="mb-0">Computer Access</p>
+                            <small>{% if branch.has_computers %}Available{% else %}Not Available{% endif %}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="{% if branch.has_study_rooms %}text-success{% else %}text-muted{% endif %}">
+                            <i class="fas fa-door-open fa-2x mb-2"></i>
+                            <p class="mb-0">Study Rooms</p>
+                            <small>{% if branch.has_study_rooms %}Available{% else %}Not Available{% endif %}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="{% if branch.has_printing %}text-success{% else %}text-muted{% endif %}">
+                            <i class="fas fa-print fa-2x mb-2"></i>
+                            <p class="mb-0">Printing Service</p>
+                            <small>{% if branch.has_printing %}Available{% else %}Not Available{% endif %}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Branch Sections -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-sitemap"></i> Library Sections</h5>
+                <a href="{% url 'library_branches:sections' branch.pk %}" class="btn btn-sm btn-outline-primary">
+                    View All Sections
+                </a>
+            </div>
+            <div class="card-body">
+                {% if branch.sections.all %}
+                <div class="row">
+                    {% for section in branch.sections.all|slice:":6" %}
+                    <div class="col-md-4 mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-folder text-primary me-2"></i>
+                            <div>
+                                <strong>{{ section.name }}</strong><br>
+                                <small class="text-muted">{{ section.description|truncatechars:30 }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if branch.sections.count > 6 %}
+                <p class="text-center mt-3">
+                    <small class="text-muted">... and {{ branch.sections.count|add:"-6" }} more sections</small>
+                </p>
+                {% endif %}
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-info-circle"></i> No sections defined for this branch yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Popular Books at this Branch -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-star"></i> Popular Books at This Branch</h5>
+            </div>
+            <div class="card-body">
+                {% if branch.book_copies.all %}
+                <div class="row">
+                    {% for copy in branch.book_copies.all|slice:":6" %}
+                    <div class="col-md-4 mb-3">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0 me-3">
+                                {% if copy.book.cover_image %}
+                                <img src="{{ copy.book.cover_image.url }}" class="img-thumbnail" style="width: 50px; height: 60px; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-light d-flex align-items-center justify-content-center" style="width: 50px; height: 60px;">
+                                    <i class="fas fa-book text-muted"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    <a href="{% url 'books:detail' copy.book.pk %}" class="text-decoration-none">
+                                        {{ copy.book.title|truncatechars:30 }}
+                                    </a>
+                                </h6>
+                                <p class="text-muted small mb-1">{{ copy.book.author_names|truncatechars:25 }}</p>
+                                <small class="{% if copy.is_available %}text-success{% else %}text-warning{% endif %}">
+                                    {{ copy.status|title }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-info-circle"></i> No books available at this branch yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <a href="{% url 'library_branches:branch_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Branches
+        </a>
+        <a href="{% url 'library_branches:sections' branch.pk %}" class="btn btn-outline-info">
+            <i class="fas fa-sitemap"></i> View Sections
+        </a>
+        <a href="{% url 'library_branches:hours' branch.pk %}" class="btn btn-outline-warning">
+            <i class="fas fa-clock"></i> Operating Hours
+        </a>
+        <a href="{% url 'library_branches:branch_list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-building"></i> All Branches
+        </a>
+    </div>
+</div>
+{% endblock %}

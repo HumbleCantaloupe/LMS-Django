@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Return Book - Library Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-gray-800">Return Book</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'borrowing:dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Return Book</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Confirm Book Return</h6>
+                    <i class="fas fa-undo fa-2x text-primary"></i>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if book.cover_image %}
+                        <div class="col-md-4 text-center mb-3">
+                            <img src="{{ book.cover_image.url }}" class="img-fluid rounded shadow-sm" 
+                                 alt="{{ book.title }}" style="max-height: 300px;">
+                        </div>
+                        <div class="col-md-8">
+                        {% else %}
+                        <div class="col-12">
+                        {% endif %}
+                            <h4 class="mb-3">{{ book.title }}</h4>
+                            {% if book.subtitle %}
+                            <h6 class="text-muted mb-3">{{ book.subtitle }}</h6>
+                            {% endif %}
+                            
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Author(s):</strong></td>
+                                    <td>{{ book.author_names }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Borrowed Date:</strong></td>
+                                    <td>{{ transaction.borrowed_at|date:"F d, Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Due Date:</strong></td>
+                                    <td>{{ transaction.due_date|date:"F d, Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Copy Number:</strong></td>
+                                    <td>{{ transaction.book_copy.copy_number }}</td>
+                                </tr>
+                                {% if transaction.renewal_count > 0 %}
+                                <tr>
+                                    <td><strong>Renewals:</strong></td>
+                                    <td><span class="badge bg-info">{{ transaction.renewal_count }} time(s)</span></td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Return Status -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h5 class="mb-3">Return Status</h5>
+                            
+                            {% if is_overdue %}
+                            <div class="alert alert-warning">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-exclamation-triangle me-2"></i>Status:</strong>
+                                        <span class="badge bg-warning">Overdue</span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-calendar-times me-2"></i>Days Late:</strong>
+                                        {{ days_overdue }} day(s)
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-money-bill me-2"></i>Late Fine:</strong>
+                                        MVR {{ fine_amount }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title text-warning"><i class="fas fa-info-circle me-2"></i>Fine Calculation</h6>
+                                    <p class="mb-0">
+                                        Late fine has been calculated based on the number of overdue days:
+                                        <br>• Days 1-3: MVR 2 per day
+                                        <br>• Days 4-7: MVR 5 per day  
+                                        <br>• Days 8+: MVR 10 per day
+                                        <br><strong>Total fine for {{ days_overdue }} day(s): MVR {{ fine_amount }}</strong>
+                                    </p>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-success">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong><i class="fas fa-check-circle me-2"></i>Status:</strong>
+                                        <span class="badge bg-success">On Time</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong><i class="fas fa-money-bill me-2"></i>Fine:</strong>
+                                        No fine applied
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Return Confirmation -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h5 class="mb-3">Return Confirmation</h5>
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-hand-paper me-2"></i>Please Confirm:</h6>
+                                <ul class="mb-0">
+                                    <li>You are returning the book in good condition</li>
+                                    <li>You understand that any damage fees may be applied later by library staff</li>
+                                    {% if is_overdue %}
+                                    <li>You acknowledge the late fine of MVR {{ fine_amount }} will be added to your account</li>
+                                    {% endif %}
+                                    <li>The book will be available for other users to borrow after return</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Action Buttons -->
+                    <div class="row">
+                        <div class="col-12 text-center">
+                            <form method="POST" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary btn-lg me-3">
+                                    <i class="fas fa-check me-2"></i>Confirm Return
+                                </button>
+                            </form>
+                            <a href="{% url 'borrowing:dashboard' %}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table-borderless td {
+    padding: 0.5rem 0.75rem;
+}
+</style>
+{% endblock %}

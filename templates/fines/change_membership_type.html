@@ -1,0 +1,389 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Change Membership Type - Library Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .membership-comparison {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .membership-option {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        margin-bottom: 15px;
+    }
+    
+    .membership-option:hover {
+        border-color: #007bff;
+        background-color: #f8f9ff;
+    }
+    
+    .membership-option.selected {
+        border-color: #007bff;
+        background-color: #f8f9ff;
+        box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+    }
+    
+    .membership-option.current {
+        border-color: #28a745;
+        background-color: #f8fff9;
+    }
+    
+    .price-display {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #007bff;
+        margin: 10px 0;
+    }
+    
+    .benefits-list {
+        text-align: left;
+        margin-top: 15px;
+    }
+    
+    .benefits-list li {
+        padding: 5px 0;
+    }
+    
+    .user-info-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .change-summary {
+        background: #fff3cd;
+        border: 1px solid #ffeb3b;
+        border-radius: 10px;
+        padding: 15px;
+        margin: 20px 0;
+    }
+    
+    .form-section {
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .section-header {
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="fas fa-user-edit text-primary me-2"></i>
+                        Change Membership Type
+                    </h1>
+                    <p class="text-muted mb-0">Modify membership for {{ member_user.get_full_name|default:member_user.username }}</p>
+                </div>
+                <div>
+                    <a href="{% url 'fines:librarian_membership_management' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Management
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Current User Info -->
+                    <div class="user-info-card">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-user me-2"></i>User Information</h5>
+                                <p><strong>Name:</strong> {{ member_user.get_full_name|default:member_user.username }}</p>
+                                <p><strong>Username:</strong> {{ member_user.username }}</p>
+                                <p><strong>Email:</strong> {{ member_user.email|default:"Not provided" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-id-card me-2"></i>Current Membership</h5>
+                                <p><strong>Type:</strong> {{ member_user.get_membership_type_display }}</p>
+                                <p><strong>Monthly Fee:</strong> MVR {{ member_user.monthly_fee }}</p>
+                                <p><strong>Expiry:</strong> 
+                                    {% if member_user.membership_expiry_date %}
+                                        {{ member_user.membership_expiry_date|date:"M d, Y" }}
+                                    {% else %}
+                                        Not set
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Change Form -->
+                    <form method="post" id="changeMembershipForm">
+                        {% csrf_token %}
+                        
+                        <!-- Membership Type Selection -->
+                        <div class="form-section">
+                            <div class="section-header">
+                                <h5><i class="fas fa-star me-2"></i>Select New Membership Type</h5>
+                            </div>
+                            
+                            <div class="row">
+                                {% for value, display in membership_types %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="membership-option {% if member_user.membership_type == value %}current{% endif %}" 
+                                         data-membership="{{ value }}">
+                                        <input type="radio" name="membership_type" value="{{ value }}" 
+                                               id="membership_{{ value }}" class="d-none membership-radio"
+                                               {% if member_user.membership_type == value %}checked{% endif %}>
+                                        
+                                        <h6>{{ display }}</h6>
+                                        {% if member_user.membership_type == value %}
+                                            <div class="badge bg-success mb-2">Current</div>
+                                        {% endif %}
+                                        
+                                        <div class="price-display">
+                                            {% if value == 'basic' %}
+                                                MVR 50<small>/month</small>
+                                            {% elif value == 'premium' %}
+                                                MVR 75<small>/month</small>
+                                            {% elif value == 'student' %}
+                                                MVR 30<small>/month</small>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <ul class="benefits-list list-unstyled">
+                                            {% if value == 'basic' %}
+                                                <li><i class="fas fa-check text-success me-2"></i>Borrow up to 3 books</li>
+                                                <li><i class="fas fa-check text-success me-2"></i>14-day loan period</li>
+                                                <li><i class="fas fa-check text-success me-2"></i>Basic library access</li>
+                                            {% elif value == 'premium' %}
+                                                <li><i class="fas fa-check text-success me-2"></i>Borrow up to 5 books</li>
+                                                <li><i class="fas fa-check text-success me-2"></i>14-day + 7-day extension</li>
+                                                <li><i class="fas fa-star text-warning me-2"></i>Priority reservations</li>
+                                                <li><i class="fas fa-check text-success me-2"></i>Premium services</li>
+                                            {% elif value == 'student' %}
+                                                <li><i class="fas fa-check text-success me-2"></i>Borrow up to 4 books</li>
+                                                <li><i class="fas fa-check text-success me-2"></i>21-day loan period</li>
+                                                <li><i class="fas fa-graduation-cap text-info me-2"></i>Student discount</li>
+                                                <li><i class="fas fa-check text-success me-2"></i>Study room access</li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Additional Options -->
+                        <div class="form-section">
+                            <div class="section-header">
+                                <h5><i class="fas fa-cogs me-2"></i>Additional Options</h5>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="extend_expiry" name="extend_expiry">
+                                        <label class="form-check-label" for="extend_expiry">
+                                            <strong>Extend Expiry Date</strong><br>
+                                            <small class="text-muted">Add 30 days to current expiry date</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="notes" class="form-label">Notes (Optional)</label>
+                                        <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                                placeholder="Reason for change, special circumstances, etc."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Change Summary -->
+                        <div class="change-summary" id="changeSummary" style="display: none;">
+                            <h6><i class="fas fa-info-circle me-2"></i>Change Summary</h6>
+                            <div id="summaryContent">
+                                <!-- Summary will be populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'fines:librarian_membership_management' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submitButton">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Information Panel -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Membership Change Guidelines</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <h6>Fee Structure:</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Basic:</strong> MVR 50/month (Annual: MVR 500)</li>
+                                    <li><strong>Premium:</strong> MVR 75/month (Annual: MVR 750)</li>
+                                    <li><strong>Student:</strong> MVR 30/month (Annual: MVR 300)</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h6>Late Renewal Fees:</h6>
+                                <ul class="list-unstyled">
+                                    <li>1-7 days: MVR 10</li>
+                                    <li>8-30 days: MVR 50</li>
+                                    <li>30+ days: Re-registration required</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <small>
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    <strong>Tip:</strong> Changes take effect immediately. Consider extending the expiry date when upgrading memberships.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-history me-2"></i>Recent Activity</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">
+                                <small>Member since: {{ member_user.date_joined|date:"M d, Y" }}</small>
+                            </p>
+                            <p class="text-muted">
+                                <small>Last login: {{ member_user.last_login|date:"M d, Y"|default:"Never" }}</small>
+                            </p>
+                            <p class="text-muted">
+                                <small>Active reservations: {{ member_user.active_reservations_count }}</small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const membershipOptions = document.querySelectorAll('.membership-option');
+    const changeSummary = document.getElementById('changeSummary');
+    const summaryContent = document.getElementById('summaryContent');
+    const submitButton = document.getElementById('submitButton');
+    const extendExpiryCheck = document.getElementById('extend_expiry');
+    
+    const currentMembership = '{{ member_user.membership_type }}';
+    const membershipData = {
+        'basic': { name: 'Basic Member', fee: 50 },
+        'premium': { name: 'Premium Member', fee: 75 },
+        'student': { name: 'Student Member', fee: 30 }
+    };
+    
+    let selectedMembership = currentMembership;
+    
+    // Handle membership selection
+    membershipOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            if (this.classList.contains('current')) return;
+            
+            membershipOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            
+            const membershipType = this.dataset.membership;
+            const radio = document.getElementById(`membership_${membershipType}`);
+            radio.checked = true;
+            selectedMembership = membershipType;
+            
+            updateSummary();
+        });
+    });
+    
+    // Handle extend expiry checkbox
+    extendExpiryCheck.addEventListener('change', updateSummary);
+    
+    function updateSummary() {
+        if (selectedMembership === currentMembership) {
+            changeSummary.style.display = 'none';
+            submitButton.disabled = true;
+            return;
+        }
+        
+        const currentData = membershipData[currentMembership];
+        const newData = membershipData[selectedMembership];
+        const extendExpiry = extendExpiryCheck.checked;
+        
+        let summaryHtml = `
+            <div class="row">
+                <div class="col-6">
+                    <strong>Current:</strong> ${currentData.name}<br>
+                    <small>MVR ${currentData.fee}/month</small>
+                </div>
+                <div class="col-6">
+                    <strong>New:</strong> ${newData.name}<br>
+                    <small>MVR ${newData.fee}/month</small>
+                </div>
+            </div>
+        `;
+        
+        if (newData.fee > currentData.fee) {
+            const increase = newData.fee - currentData.fee;
+            summaryHtml += `<div class="alert alert-warning mt-2 mb-0">
+                <small><i class="fas fa-arrow-up me-1"></i>Monthly fee increase: MVR ${increase}</small>
+            </div>`;
+        } else if (newData.fee < currentData.fee) {
+            const decrease = currentData.fee - newData.fee;
+            summaryHtml += `<div class="alert alert-success mt-2 mb-0">
+                <small><i class="fas fa-arrow-down me-1"></i>Monthly fee decrease: MVR ${decrease}</small>
+            </div>`;
+        }
+        
+        if (extendExpiry) {
+            summaryHtml += `<div class="alert alert-info mt-2 mb-0">
+                <small><i class="fas fa-calendar-plus me-1"></i>Expiry date will be extended by 30 days</small>
+            </div>`;
+        }
+        
+        summaryContent.innerHTML = summaryHtml;
+        changeSummary.style.display = 'block';
+        submitButton.disabled = false;
+    }
+    
+    // Form validation
+    document.getElementById('changeMembershipForm').addEventListener('submit', function(e) {
+        if (selectedMembership === currentMembership) {
+            e.preventDefault();
+            alert('Please select a different membership type to make changes.');
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

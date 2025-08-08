@@ -1,0 +1,457 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Reservations - Library Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reservation-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #dee2e6;
+    }
+    
+    .reservation-card.active {
+        border-left-color: #28a745;
+        background-color: #f8fff9;
+    }
+    
+    .reservation-card.fulfilled {
+        border-left-color: #007bff;
+        background-color: #f8f9ff;
+    }
+    
+    .reservation-card.cancelled {
+        border-left-color: #6c757d;
+        background-color: #f8f9fa;
+    }
+    
+    .reservation-card.expired {
+        border-left-color: #dc3545;
+        background-color: #fff8f8;
+    }
+    
+    .reservation-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .status-badge.active { background-color: #28a745 !important; }
+    .status-badge.fulfilled { background-color: #007bff !important; }
+    .status-badge.cancelled { background-color: #6c757d !important; }
+    .status-badge.expired { background-color: #dc3545 !important; }
+    
+    .book-cover {
+        width: 80px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    
+    .filter-tabs {
+        border-bottom: 2px solid #dee2e6;
+        margin-bottom: 20px;
+    }
+    
+    .filter-tab {
+        padding: 10px 20px;
+        border: none;
+        background: none;
+        color: #6c757d;
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s ease;
+    }
+    
+    .filter-tab:hover {
+        color: #495057;
+        text-decoration: none;
+    }
+    
+    .filter-tab.active {
+        color: #007bff;
+        border-bottom-color: #007bff;
+        font-weight: 600;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 10px;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="fas fa-bookmark text-primary me-2"></i>
+                        My Reservations
+                    </h1>
+                    <p class="text-muted mb-0">Manage your book reservations</p>
+                </div>
+                <div>
+                    <a href="{% url 'books:book_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-search me-2"></i>Browse Books
+                    </a>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats-card">
+                <div class="row">
+                    <div class="col-md-3 stat-item">
+                        <div class="stat-number">{{ active_count }}</div>
+                        <div class="stat-label">Active Reservations</div>
+                    </div>
+                    <div class="col-md-3 stat-item">
+                        <div class="stat-number">{{ fulfilled_count }}</div>
+                        <div class="stat-label">Fulfilled</div>
+                    </div>
+                    <div class="col-md-3 stat-item">
+                        <div class="stat-number">{{ cancelled_count }}</div>
+                        <div class="stat-label">Cancelled</div>
+                    </div>
+                    <div class="col-md-3 stat-item">
+                        <div class="stat-number">{{ expired_count }}</div>
+                        <div class="stat-label">Expired</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="filter-tabs d-flex">
+                <a href="{% url 'books:my_reservations' %}" 
+                   class="filter-tab {% if not selected_status %}active{% endif %}">
+                    All Reservations
+                </a>
+                <a href="{% url 'books:my_reservations' %}?status=active" 
+                   class="filter-tab {% if selected_status == 'active' %}active{% endif %}">
+                    Active ({{ active_count }})
+                </a>
+                {% if pending_count > 0 %}
+                <a href="{% url 'books:my_reservations' %}?status=pending" 
+                   class="filter-tab {% if selected_status == 'pending' %}active{% endif %}">
+                    Pending Payment ({{ pending_count }})
+                </a>
+                {% endif %}
+                <a href="{% url 'books:my_reservations' %}?status=fulfilled" 
+                   class="filter-tab {% if selected_status == 'fulfilled' %}active{% endif %}">
+                    Fulfilled ({{ fulfilled_count }})
+                </a>
+                <a href="{% url 'books:my_reservations' %}?status=cancelled" 
+                   class="filter-tab {% if selected_status == 'cancelled' %}active{% endif %}">
+                    Cancelled ({{ cancelled_count }})
+                </a>
+                <a href="{% url 'books:my_reservations' %}?status=expired" 
+                   class="filter-tab {% if selected_status == 'expired' %}active{% endif %}">
+                    Expired ({{ expired_count }})
+                </a>
+            </div>
+
+            <!-- Reservations List -->
+            {% if reservations_with_queue %}
+                <div class="row">
+                    {% for item in reservations_with_queue %}
+                        {% with reservation=item.reservation queue_info=item.queue_info payment_required=item.payment_required branch_available=item.branch_available_copies %}
+                        <div class="col-12 mb-3">
+                            <div class="card reservation-card {{ reservation.status }}">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <!-- Book Cover -->
+                                        <div class="col-md-1 col-3">
+                                            {% if reservation.book.cover_image %}
+                                                <img src="{{ reservation.book.cover_image.url }}" 
+                                                     alt="{{ reservation.book.title }}" 
+                                                     class="book-cover">
+                                            {% else %}
+                                                <div class="book-cover bg-light d-flex align-items-center justify-content-center">
+                                                    <i class="fas fa-book text-muted"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Book Details -->
+                                        <div class="col-md-6 col-9">
+                                            <h5 class="card-title mb-1">
+                                                <a href="{% url 'books:detail' reservation.book.pk %}" 
+                                                   class="text-decoration-none">
+                                                    {{ reservation.book.title }}
+                                                </a>
+                                            </h5>
+                                            <p class="text-muted mb-1">
+                                                by {{ reservation.book.author_names }}
+                                            </p>
+                                            <div class="mb-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                                    {{ reservation.branch.name }}
+                                                </small>
+                                                
+                                                <!-- Reservation Type Badge -->
+                                                {% if reservation.reservation_type == 'priority' %}
+                                                    <span class="badge bg-warning text-dark ms-2">
+                                                        <i class="fas fa-star"></i> Priority
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary ms-2">
+                                                        <i class="fas fa-clock"></i> Regular
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <!-- Queue Information -->
+                                            {% if queue_info and reservation.status == 'active' %}
+                                            <div class="queue-info bg-light p-2 rounded">
+                                                <div class="row text-center">
+                                                    <div class="col-4">
+                                                        <strong class="text-primary">{{ queue_info.position }}</strong><br>
+                                                        <small class="text-muted">Position</small>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <strong class="text-info">{{ queue_info.ahead_of_you }}</strong><br>
+                                                        <small class="text-muted">Ahead</small>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <strong class="text-success">{{ queue_info.available_copies }}</strong><br>
+                                                        <small class="text-muted">Available</small>
+                                                    </div>
+                                                </div>
+                                                <div class="text-center mt-1">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-hourglass-half"></i> 
+                                                        Wait: {{ queue_info.estimated_wait }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <!-- Payment Required Alert -->
+                                            {% if payment_required %}
+                                            <div class="alert alert-warning alert-sm mt-2 mb-0">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                                <strong>Payment Required:</strong> 
+                                                <a href="{% url 'books:payment_priority' reservation.pk %}" class="alert-link">
+                                                    Complete payment to activate
+                                                </a>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Reservation Info -->
+                                        <div class="col-md-3">
+                                            <div class="text-end">
+                                                <span class="badge status-badge {{ reservation.status }} mb-2">
+                                                    {% if reservation.status == 'pending' %}
+                                                        <i class="fas fa-hourglass-start me-1"></i>Pending Payment
+                                                    {% elif reservation.status == 'active' %}
+                                                        <i class="fas fa-clock me-1"></i>Active
+                                                    {% elif reservation.status == 'fulfilled' %}
+                                                        <i class="fas fa-check me-1"></i>Fulfilled
+                                                    {% elif reservation.status == 'cancelled' %}
+                                                        <i class="fas fa-times me-1"></i>Cancelled
+                                                    {% elif reservation.status == 'expired' %}
+                                                        <i class="fas fa-exclamation me-1"></i>Expired
+                                                    {% endif %}
+                                                </span>
+                                                <br>
+                                                <small class="text-muted">
+                                                    Reserved: {{ reservation.reserved_at|date:"M d, Y" }}
+                                                </small>
+                                                <br>
+                                                {% if reservation.status == 'active' %}
+                                                    <small class="text-warning">
+                                                        <i class="fas fa-hourglass-half me-1"></i>
+                                                        Expires: {{ reservation.expires_at|date:"M d, Y" }}
+                                                    </small>
+                                                {% elif reservation.fulfilled_at %}
+                                                    <small class="text-success">
+                                                        Fulfilled: {{ reservation.fulfilled_at|date:"M d, Y" }}
+                                                    </small>
+                                                {% elif reservation.cancelled_at %}
+                                                    <small class="text-muted">
+                                                        Cancelled: {{ reservation.cancelled_at|date:"M d, Y" }}
+                                                    </small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+
+                                        <!-- Actions -->
+                                        <div class="col-md-2 col-12">
+                                            <div class="d-flex flex-column gap-2">
+                                                <a href="{% url 'books:detail' reservation.book.pk %}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye me-1"></i>View Book
+                                                </a>
+                                                
+                                {% if reservation.status == 'active' %}
+                                    <!-- Check if copies are available for immediate borrowing at this branch -->
+                                    {% if branch_available > 0 %}
+                                        <form method="post" action="{% url 'books:reservation_to_borrow' reservation.pk %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-success" 
+                                                    onclick="return confirm('Convert your reservation to a borrow? You will immediately check out this book from {{ reservation.branch.name }}.');">
+                                                <i class="fas fa-book-open me-1"></i>Borrow Now
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-secondary" disabled title="No copies available at {{ reservation.branch.name }}">
+                                            <i class="fas fa-book-open me-1"></i>No Copies Available
+                                        </button>
+                                    {% endif %}
+                                    
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#cancelModal{{ reservation.pk }}">
+                                        <i class="fas fa-times me-1"></i>Cancel
+                                    </button>                                                    <!-- Cancel Modal -->
+                                                    <div class="modal fade" id="cancelModal{{ reservation.pk }}" tabindex="-1">
+                                                        <div class="modal-dialog">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title">Cancel Reservation</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <p>Are you sure you want to cancel your reservation for:</p>
+                                                                    <p class="fw-bold">{{ reservation.book.title }}</p>
+                                                                    <p class="text-muted">This action cannot be undone.</p>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                                        Keep Reservation
+                                                                    </button>
+                                                                    <form method="post" action="{% url 'books:cancel_reservation' reservation.pk %}" class="d-inline">
+                                                                        {% csrf_token %}
+                                                                        <button type="submit" class="btn btn-danger">
+                                                                            <i class="fas fa-times me-1"></i>Cancel Reservation
+                                                                        </button>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Additional Details -->
+                                    {% if reservation.reservation_type == 'priority' %}
+                                        <div class="row mt-2">
+                                            <div class="col-12">
+                                                <div class="alert alert-info py-2 mb-0">
+                                                    <small>
+                                                        <i class="fas fa-star me-1"></i>
+                                                        Priority Reservation - Higher processing priority
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                    <nav aria-label="Reservations pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if selected_status %}status={{ selected_status }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                                        <i class="fas fa-chevron-left"></i> Previous
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% if selected_status %}status={{ selected_status }}&{% endif %}page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if selected_status %}status={{ selected_status }}&{% endif %}page={{ page_obj.next_page_number }}">
+                                        Next <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-bookmark fa-4x text-muted"></i>
+                    </div>
+                    <h4 class="text-muted">No Reservations Found</h4>
+                    {% if selected_status %}
+                        <p class="text-muted">You don't have any {{ selected_status }} reservations.</p>
+                        <a href="{% url 'books:my_reservations' %}" class="btn btn-outline-primary">
+                            View All Reservations
+                        </a>
+                    {% else %}
+                        <p class="text-muted mb-4">You haven't reserved any books yet.</p>
+                        <a href="{% url 'books:book_list' %}" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>Browse Books to Reserve
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Auto-hide success/error messages
+    setTimeout(function() {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        });
+    }, 5000);
+    
+    // Countdown for active reservations
+    document.querySelectorAll('.reservation-card.active').forEach(function(card) {
+        // Add any JavaScript for countdown timers or other interactivity
+    });
+</script>
+{% endblock %}
+{% endblock %}

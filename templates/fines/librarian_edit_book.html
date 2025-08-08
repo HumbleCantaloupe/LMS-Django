@@ -1,0 +1,364 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Book - Library Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .edit-book-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .book-form {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        padding: 30px;
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+    }
+    
+    .section-title {
+        color: #2c3e50;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .form-control:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        border: none;
+        border-radius: 25px;
+        padding: 10px 25px;
+    }
+    
+    .btn-secondary {
+        background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        border: none;
+        border-radius: 25px;
+        padding: 10px 25px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="edit-book-container">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-0">
+                    <i class="fas fa-edit text-primary me-2"></i>
+                    Edit Book
+                </h2>
+                <p class="text-muted mt-2">
+                    Update book information in the library inventory
+                </p>
+            </div>
+            <a href="{% url 'fines:librarian_book_inventory' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Inventory
+            </a>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if book %}
+            <!-- Edit Book Form -->
+            <div class="book-form">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-info-circle me-2"></i>Basic Information
+                        </h4>
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="title" name="title" 
+                                           value="{{ book.title }}" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="authors" class="form-label">Authors <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="authors" name="authors" 
+                                           value="{{ book.author_names }}" required
+                                           placeholder="Separate multiple authors with commas">
+                                    <div class="form-text">
+                                        Current authors will be updated based on the names you enter. Use format: "First Last, First Last"
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="isbn" class="form-label">ISBN <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="isbn" name="isbn" 
+                                           value="{{ book.isbn }}" required>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    {% if book.cover_image %}
+                                        <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" 
+                                             class="img-fluid rounded shadow" style="max-height: 200px;">
+                                    {% else %}
+                                        <div class="bg-light rounded p-4 text-muted" style="height: 200px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-book fa-3x"></i>
+                                        </div>
+                                    {% endif %}
+                                    <p class="small text-muted mt-2">Cover Image</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Publication Details -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-calendar-alt me-2"></i>Publication Details
+                        </h4>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="category" class="form-label">Category</label>
+                                    <select class="form-select" id="category" name="category">
+                                        <option value="">Select Category</option>
+                                        {% for category in categories %}
+                                            <option value="{{ category.id }}" 
+                                                {% if book.category and book.category.id == category.id %}selected{% endif %}>
+                                                {{ category.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="publisher" class="form-label">Publisher</label>
+                                    <select class="form-select" id="publisher" name="publisher">
+                                        <option value="">Select Publisher</option>
+                                        {% for publisher in publishers %}
+                                            <option value="{{ publisher.id }}" 
+                                                {% if book.publisher and book.publisher.id == publisher.id %}selected{% endif %}>
+                                                {{ publisher.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="publication_date" class="form-label">Publication Date</label>
+                                    <input type="date" class="form-control" id="publication_date" name="publication_date" 
+                                           value="{{ book.publication_date|date:'Y-m-d' }}">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="pages" class="form-label">Number of Pages</label>
+                                    <input type="number" class="form-control" id="pages" name="pages" 
+                                           value="{{ book.pages }}" min="1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-file-alt me-2"></i>Description
+                        </h4>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Book Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="5" 
+                                      placeholder="Enter a brief description of the book...">{{ book.description }}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Copies Management -->
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-building me-2"></i>Copies & Branch Management
+                        </h4>
+                        
+                        <!-- Current Copies Display -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h6 class="text-muted mb-3">Current Copies by Branch</h6>
+                                {% if book.book_copies.exists %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Branch</th>
+                                                    <th>Total Copies</th>
+                                                    <th>Available</th>
+                                                    <th>Borrowed</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% regroup book.book_copies.all by branch as branch_copies %}
+                                                {% for branch_group in branch_copies %}
+                                                <tr>
+                                                    <td>
+                                                        <strong>{{ branch_group.grouper.name }}</strong><br>
+                                                        <small class="text-muted">{{ branch_group.grouper.get_location_display }}</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-primary">{{ branch_group.list|length }}</span>
+                                                    </td>
+                                                    <td>
+                                                        {% with available_count=branch_group.list|length %}
+                                                        <span class="badge bg-success">
+                                                            {% for copy in branch_group.list %}
+                                                                {% if copy.status == 'available' %}{{ forloop.counter0|add:1 }}{% endif %}
+                                                            {% endfor %}
+                                                        </span>
+                                                        {% endwith %}
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-warning">
+                                                            {% for copy in branch_group.list %}
+                                                                {% if copy.status == 'borrowed' %}{{ forloop.counter0|add:1 }}{% endif %}
+                                                            {% endfor %}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        {% for copy in branch_group.list %}
+                                                            <span class="badge bg-{% if copy.status == 'available' %}success{% elif copy.status == 'borrowed' %}warning{% elif copy.status == 'reserved' %}info{% else %}secondary{% endif %} me-1 mb-1">
+                                                                {{ copy.get_status_display }}
+                                                            </span>
+                                                        {% endfor %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        No copies exist for this book yet. Use the section below to add copies.
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Add New Copies -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h6 class="text-muted mb-3">Add Copies to Branches</h6>
+                                <div id="branch-copies-container">
+                                    {% for branch in branches %}
+                                    <div class="branch-copy-row mb-3" data-branch-id="{{ branch.id }}">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-6">
+                                                <label class="form-label">
+                                                    <strong>{{ branch.name }}</strong> 
+                                                    <small class="text-muted">({{ branch.get_location_display }})</small>
+                                                </label>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="copies_{{ branch.id }}" class="form-label">Number of Copies</label>
+                                                <input type="number" class="form-control" 
+                                                       id="copies_{{ branch.id }}" 
+                                                       name="copies_{{ branch.id }}" 
+                                                       min="0" max="50" value="0"
+                                                       placeholder="0">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="condition_{{ branch.id }}" class="form-label">Condition</label>
+                                                <select class="form-select" 
+                                                        id="condition_{{ branch.id }}" 
+                                                        name="condition_{{ branch.id }}">
+                                                    <option value="excellent">Excellent</option>
+                                                    <option value="good" selected>Good</option>
+                                                    <option value="fair">Fair</option>
+                                                    <option value="poor">Poor</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Note:</strong> Enter the number of new copies to add to each branch. 
+                                    Existing copies will not be affected. Leave as 0 to skip adding copies to that branch.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted">
+                            <small>
+                                <i class="fas fa-info-circle me-1"></i>
+                                Fields marked with <span class="text-danger">*</span> are required
+                            </small>
+                        </div>
+                        
+                        <div>
+                            <a href="{% url 'fines:librarian_book_inventory' %}" class="btn btn-secondary me-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Update Book
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        {% else %}
+            <!-- Book Not Found -->
+            <div class="text-center py-5">
+                <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                <h3 class="text-muted">Book Not Found</h3>
+                <p class="text-muted">The requested book could not be found or the book management system is not available.</p>
+                <a href="{% url 'fines:librarian_book_inventory' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Inventory
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const title = document.getElementById('title').value.trim();
+        const authors = document.getElementById('authors').value.trim();
+        const isbn = document.getElementById('isbn').value.trim();
+        
+        if (!title || !authors || !isbn) {
+            e.preventDefault();
+            alert('Please fill in all required fields (Title, Authors, ISBN).');
+            return false;
+        }
+    });
+</script>
+{% endblock %}

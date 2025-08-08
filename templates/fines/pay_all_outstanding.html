@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pay All Outstanding - Library Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .payment-form {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 30px;
+    }
+    .summary-section {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .total-display {
+        font-size: 2.5em;
+        font-weight: bold;
+        color: #dc3545;
+        text-align: center;
+        margin: 20px 0;
+        padding: 20px;
+        background: #fff5f5;
+        border: 2px dashed #dc3545;
+        border-radius: 10px;
+    }
+    .item-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 15px;
+        margin: 20px 0;
+    }
+    .payment-item {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    .payment-item:last-child {
+        border-bottom: none;
+    }
+    .payment-method-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+    }
+    .payment-method {
+        border: 2px solid #e9ecef;
+        border-radius: 5px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .payment-method:hover {
+        border-color: #007bff;
+        background-color: #f8f9ff;
+        transform: translateY(-2px);
+    }
+    .payment-method.selected {
+        border-color: #007bff;
+        background-color: #e3f2fd;
+    }
+    .payment-method input[type="radio"] {
+        display: none;
+    }
+    .btn-pay-all {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        color: white;
+        padding: 15px 30px;
+        font-size: 1.2em;
+        font-weight: 500;
+        border-radius: 5px;
+        width: 100%;
+        margin-top: 20px;
+    }
+    .btn-pay-all:hover {
+        background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .breakdown-table {
+        font-size: 0.9em;
+    }
+    .breakdown-table td {
+        padding: 8px 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="payment-form">
+                <div class="text-center mb-4">
+                    <h2><i class="fas fa-credit-card me-2"></i>Pay All Outstanding</h2>
+                    <p class="text-muted">Secure bulk payment processing</p>
+                </div>
+
+                <div class="summary-section">
+                    <h5><i class="fas fa-list me-2"></i>Payment Summary</h5>
+                    
+                    <div class="total-display">
+                        Total: MVR {{ totals.outstanding|floatformat:2 }}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm breakdown-table">
+                                <tr>
+                                    <td><strong>Outstanding Fines:</strong></td>
+                                    <td class="text-end text-danger">MVR {{ totals.fines|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Membership Renewals:</strong></td>
+                                    <td class="text-end text-primary">MVR {{ totals.membership|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Membership Fees:</strong></td>
+                                    <td class="text-end text-info">MVR {{ totals.fees|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Digital Services:</strong></td>
+                                    <td class="text-end text-success">MVR {{ totals.digital|floatformat:2 }}</td>
+                                </tr>
+                                <tr class="border-top">
+                                    <td><strong>Total Outstanding:</strong></td>
+                                    <td class="text-end"><strong>MVR {{ totals.outstanding|floatformat:2 }}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="item-list">
+                                <h6>Items to be paid:</h6>
+                                {% if outstanding_fines %}
+                                    <div class="mb-2"><strong>Fines ({{ outstanding_fines.count }}):</strong></div>
+                                    {% for fine in outstanding_fines %}
+                                        <div class="payment-item">
+                                            <span>{{ fine.get_fine_type_display }}</span>
+                                            <span class="text-danger">MVR {{ fine.balance|floatformat:2 }}</span>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                                
+                                {% if membership_renewals %}
+                                    <div class="mb-2 mt-3"><strong>Membership Renewals ({{ membership_renewals.count }}):</strong></div>
+                                    {% for renewal in membership_renewals %}
+                                        <div class="payment-item">
+                                            <span>{{ renewal.get_requested_membership_type_display }} Renewal</span>
+                                            <span class="text-primary">MVR {{ renewal.total_amount|floatformat:2 }}</span>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+
+                                {% if membership_fees %}
+                                    <div class="mb-2 mt-3"><strong>Membership Fees ({{ membership_fees.count }}):</strong></div>
+                                    {% for fee in membership_fees %}
+                                        <div class="payment-item">
+                                            <span>{{ fee.description }}</span>
+                                            <span class="text-info">MVR {{ fee.amount|floatformat:2 }}</span>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+
+                                {% if digital_services %}
+                                    <div class="mb-2 mt-3"><strong>Digital Services ({{ digital_services.count }}):</strong></div>
+                                    {% for service in digital_services %}
+                                        <div class="payment-item">
+                                            <span>{{ service.get_service_type_display }}</span>
+                                            <span class="text-success">MVR {{ service.amount|floatformat:2 }}</span>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" id="bulkPaymentForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Payment Method</strong></label>
+                        <div class="payment-method-grid">
+                            {% for method_code, method_name in payment_methods %}
+                                <label class="payment-method" for="method_{{ method_code }}">
+                                    <input type="radio" name="payment_method" value="{{ method_code }}" id="method_{{ method_code }}" {% if forloop.first %}checked{% endif %}>
+                                    <i class="fas fa-{% if method_code == 'card' %}credit-card{% elif method_code == 'cash' %}money-bill{% elif method_code == 'bank_transfer' %}university{% elif method_code == 'mobile_payment' %}mobile-alt{% else %}globe{% endif %} fa-2x mb-2"></i>
+                                    <div>{{ method_name }}</div>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Important:</strong> This will process payment for ALL outstanding items listed above. 
+                        Total amount to be charged: <strong>MVR {{ totals.outstanding|floatformat:2 }}</strong>
+                    </div>
+
+                    <button type="submit" class="btn-pay-all">
+                        <i class="fas fa-lock me-2"></i>Process Bulk Payment - MVR {{ totals.outstanding|floatformat:2 }}
+                    </button>
+
+                    <div class="text-center mt-3">
+                        <a href="{% url 'fines:payments' %}" class="btn btn-link">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Payments
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle payment method selection
+document.querySelectorAll('.payment-method').forEach(function(method) {
+    method.addEventListener('click', function() {
+        // Remove selected class from all methods
+        document.querySelectorAll('.payment-method').forEach(function(m) {
+            m.classList.remove('selected');
+        });
+        // Add selected class to clicked method
+        this.classList.add('selected');
+        // Check the radio button
+        this.querySelector('input[type="radio"]').checked = true;
+    });
+});
+
+// Set initial selection
+document.querySelector('.payment-method').classList.add('selected');
+
+// Pre-select payment method if provided via URL parameter
+const urlParams = new URLSearchParams(window.location.search);
+const preSelectedMethod = urlParams.get('method');
+if (preSelectedMethod) {
+    const methodElement = document.getElementById('method_' + preSelectedMethod);
+    if (methodElement) {
+        methodElement.checked = true;
+        methodElement.closest('.payment-method').classList.add('selected');
+        document.querySelectorAll('.payment-method').forEach(function(m) {
+            if (m !== methodElement.closest('.payment-method')) {
+                m.classList.remove('selected');
+            }
+        });
+    }
+}
+
+// Form confirmation
+document.getElementById('bulkPaymentForm').addEventListener('submit', function(e) {
+    const totalAmount = {{ totals.outstanding|floatformat:2 }};
+    const selectedMethod = document.querySelector('input[name="payment_method"]:checked').value;
+    const methodName = document.querySelector('input[name="payment_method"]:checked').closest('.payment-method').textContent.trim();
+    
+    if (!confirm(`Confirm bulk payment of MVR ${totalAmount.toFixed(2)} via ${methodName}?\n\nThis will process payment for all outstanding items.`)) {
+        e.preventDefault();
+        return;
+    }
+    
+    // Show processing message
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing Payment...';
+    submitBtn.disabled = true;
+});
+</script>
+{% endblock %}

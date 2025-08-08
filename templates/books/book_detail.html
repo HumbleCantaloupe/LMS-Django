@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ book.title }} - Library Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        {% if book.cover_image %}
+        <img src="{{ book.cover_image.url }}" 
+             class="img-fluid rounded shadow" 
+             alt="{{ book.title }}">
+        {% else %}
+        <div class="bg-light d-flex align-items-center justify-content-center rounded shadow" 
+             style="height: 400px;">
+            <i class="bi bi-book fs-1 text-muted"></i>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-8">
+        <div class="mb-3">
+            <h1>{{ book.title }}</h1>
+            {% if book.subtitle %}
+            <h5 class="text-muted">{{ book.subtitle }}</h5>
+            {% endif %}
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-sm-6">
+                <strong>Author(s):</strong><br>
+                {% for author in book.authors.all %}
+                    <a href="{% url 'books:by_author' author.id %}" class="text-decoration-none">
+                        {{ author.full_name }}
+                    </a>{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    Unknown Author
+                {% endfor %}
+            </div>
+            <div class="col-sm-6">
+                <strong>ISBN:</strong><br>
+                {{ book.isbn }}
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-sm-6">
+                <strong>Publisher:</strong><br>
+                {% if book.publisher %}
+                    {{ book.publisher.name }}
+                {% else %}
+                    Unknown Publisher
+                {% endif %}
+            </div>
+            <div class="col-sm-6">
+                <strong>Publication Date:</strong><br>
+                {{ book.publication_date }}
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-sm-6">
+                <strong>Category:</strong><br>
+                {% if book.category %}
+                    <a href="{% url 'books:by_category' book.category.id %}" class="badge bg-primary text-decoration-none">
+                        {{ book.category.name }}
+                    </a>
+                {% else %}
+                    <span class="text-muted">Uncategorized</span>
+                {% endif %}
+            </div>
+            <div class="col-sm-6">
+                <strong>Pages:</strong><br>
+                {{ book.pages }}
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-sm-6">
+                <strong>Language:</strong><br>
+                {{ book.get_language_display }}
+            </div>
+            <div class="col-sm-6">
+                <strong>Format:</strong><br>
+                {{ book.get_format_display }}
+            </div>
+        </div>
+        
+        <!-- Availability Status -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="bi bi-info-circle"></i> Availability</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <h4 class="text-primary">{{ book.copies.count }}</h4>
+                                    <small class="text-muted">Total Copies</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <h4 class="text-success">{{ book.available_copies_count }}</h4>
+                                    <small class="text-muted">Available</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <h4 class="text-warning">{{ book.borrowed_copies_count }}</h4>
+                                    <small class="text-muted">Borrowed</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        {% if user.is_authenticated %}
+        <div class="row mb-4">
+            <div class="col-12">
+                {% if user.is_member %}
+                    {% if book.available_copies_count > 0 %}
+                    <a href="{% url 'borrowing:borrow' %}?book={{ book.id }}" 
+                       class="btn btn-success me-2">
+                        <i class="bi bi-book"></i> Borrow This Book
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'books:reserve' book.id %}" 
+                       class="btn btn-outline-primary me-2">
+                        <i class="bi bi-bookmark"></i> Reserve
+                    </a>
+                {% endif %}
+                
+                {% if user.is_librarian %}
+                <a href="{% url 'books:edit' book.id %}" 
+                   class="btn btn-warning me-2">
+                    <i class="bi bi-pencil"></i> Edit Book
+                </a>
+                <a href="{% url 'books:copy_list' book.id %}" 
+                   class="btn btn-info me-2">
+                    <i class="bi bi-collection"></i> Manage Copies
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Description -->
+{% if book.description %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-file-text"></i> Description</h6>
+            </div>
+            <div class="card-body">
+                <p>{{ book.description|linebreaks }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Navigation -->
+<div class="row mt-4">
+    <div class="col-12">
+        <a href="{% url 'books:book_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Books
+        </a>
+    </div>
+</div>
+{% endblock %}

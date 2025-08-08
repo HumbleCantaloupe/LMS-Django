@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ branch.name }} Sections - Library Branches{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-sitemap"></i> {{ branch.name }} - Sections</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'library_branches:branch_list' %}">Branches</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'library_branches:detail' branch.pk %}">{{ branch.name }}</a></li>
+                    <li class="breadcrumb-item active">Sections</li>
+                </ol>
+            </nav>
+        </div>
+        
+        <!-- Sections Overview -->
+        <div class="alert alert-info mb-4">
+            <i class="fas fa-info-circle"></i> 
+            {{ branch.name }} has {{ branch.sections.count }} section{{ branch.sections.count|pluralize }} organized to help you find resources efficiently.
+        </div>
+        
+        <!-- Sections Grid -->
+        <div class="row">
+            {% for section in branch.sections.all %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card card-hover h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-folder"></i> {{ section.name }}
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% if section.description %}
+                        <p class="card-text">{{ section.description }}</p>
+                        {% endif %}
+                        
+                        {% if section.floor %}
+                        <p class="card-text">
+                            <strong>Location:</strong> {{ section.floor }}
+                        </p>
+                        {% endif %}
+                        
+                        <!-- Section Statistics -->
+                        <div class="row text-center small">
+                            <div class="col-6">
+                                <span class="text-success">
+                                    <strong>{{ section.book_count|default:0 }}</strong><br>
+                                    Books
+                                </span>
+                            </div>
+                            <div class="col-6">
+                                <span class="text-info">
+                                    <strong>{{ section.capacity|default:"N/A" }}</strong><br>
+                                    Capacity
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Subject Areas -->
+                        {% if section.subject_areas %}
+                        <div class="mt-3">
+                            <strong class="small">Subject Areas:</strong><br>
+                            {% for subject in section.subject_areas.split:',' %}
+                            <span class="badge badge-secondary me-1">{{ subject.strip }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between align-items-center">
+                            {% if section.is_public_access %}
+                            <span class="badge badge-success">
+                                <i class="fas fa-unlock"></i> Public Access
+                            </span>
+                            {% else %}
+                            <span class="badge badge-warning">
+                                <i class="fas fa-lock"></i> Restricted Access
+                            </span>
+                            {% endif %}
+                            
+                            {% if section.has_computers %}
+                            <small class="text-muted">
+                                <i class="fas fa-desktop"></i> Computers Available
+                            </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-warning text-center">
+                    <i class="fas fa-exclamation-triangle"></i> No sections have been configured for this branch yet.
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Floor Plan Info (if applicable) -->
+        {% if branch.sections.all %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-map"></i> Quick Floor Guide</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% regroup branch.sections.all by floor as floors %}
+                    {% for floor in floors %}
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-primary">{{ floor.grouper|default:"Main Floor" }}</h6>
+                        <ul class="list-unstyled ms-3">
+                            {% for section in floor.list %}
+                            <li class="mb-1">
+                                <i class="fas fa-folder text-muted me-1"></i>
+                                {{ section.name }}
+                                {% if not section.is_public_access %}
+                                <small class="text-warning">(Restricted)</small>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Section Statistics Summary -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h4 class="text-primary">{{ branch.sections.count }}</h4>
+                        <p class="mb-0 text-muted">Total Sections</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-success">{{ public_sections_count }}</h4>
+                        <p class="mb-0 text-muted">Public Access</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-info">{{ computer_sections_count }}</h4>
+                        <p class="mb-0 text-muted">With Computers</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-warning">{{ total_books_in_sections }}</h4>
+                        <p class="mb-0 text-muted">Total Books</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <a href="{% url 'library_branches:detail' branch.pk %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Branch
+        </a>
+        <a href="{% url 'library_branches:hours' branch.pk %}" class="btn btn-outline-warning">
+            <i class="fas fa-clock"></i> Operating Hours
+        </a>
+        <a href="{% url 'library_branches:branch_list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-building"></i> All Branches
+        </a>
+    </div>
+</div>
+{% endblock %}

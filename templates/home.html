@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home - Library Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="jumbotron bg-primary text-white rounded p-5 mb-4">
+            <h1 class="display-4">Welcome to Library Management System</h1>
+            <p class="lead">Discover, borrow, and manage your reading journey with our comprehensive library system.</p>
+            {% if not user.is_authenticated %}
+            <hr class="my-4">
+            <p>Join our library community to access thousands of books and resources.</p>
+            <a class="btn btn-light btn-lg" href="{% url 'accounts:register' %}" role="button">
+                <i class="bi bi-person-plus"></i> Join Now
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3>{{ total_books }}</h3>
+                        <p>Total Books</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-book fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3>{{ available_copies }}</h3>
+                        <p>Available Copies</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-check-circle fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3>{{ total_members }}</h3>
+                        <p>Active Members</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-people fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3>{{ active_borrowings }}</h3>
+                        <p>Active Borrowings</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-arrow-repeat fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if user.is_authenticated %}
+<!-- User Dashboard Quick Access -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-speedometer2"></i> Quick Access
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <a href="{% url 'books:book_list' %}" class="btn btn-outline-primary">
+                                <i class="bi bi-search"></i><br>Browse Books
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-success">
+                                <i class="bi bi-person-lines-fill"></i><br>My Dashboard
+                            </a>
+                        </div>
+                    </div>
+                    {% if user.is_librarian %}
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <a href="{% url 'accounts:member_list' %}" class="btn btn-outline-info">
+                                <i class="bi bi-people"></i><br>Manage Members
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <a href="/admin/" class="btn btn-outline-warning">
+                                <i class="bi bi-gear"></i><br>Admin Panel
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Books -->
+{% if recent_books %}
+<div class="row">
+    <div class="col-12">
+        <h3 class="mb-3">
+            <i class="bi bi-clock-history"></i> Recently Added Books
+        </h3>
+        <div class="row">
+            {% for book in recent_books %}
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    {% if book.cover_image %}
+                    <img src="{{ book.cover_image.url }}" class="card-img-top" alt="{{ book.title }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <i class="bi bi-book fs-1 text-muted"></i>
+                    </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h6 class="card-title">{{ book.title }}</h6>
+                        <p class="card-text text-muted small">
+                            {% for author in book.authors.all %}
+                                {{ author.full_name }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </p>
+                        <a href="{% url 'books:book_detail' book.pk %}" class="btn btn-sm btn-primary">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
