@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.views.generic import (
-    ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
+    ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView, View
 )
 from django.urls import reverse_lazy
 from django.db.models import Q, Count
@@ -157,6 +157,49 @@ class BookReserveView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         context['book'] = get_object_or_404(Book, id=self.kwargs.get('pk'))
         return context
+    
+    def post(self, request, *args, **kwargs):
+        book = get_object_or_404(Book, id=self.kwargs.get('pk'))
+        
+        # Check if user already has an active reservation for this book
+        existing_reservation = BookReservation.objects.filter(
+            user=request.user, 
+            book=book, 
+            status='active'
+        ).first()
+        
+        if existing_reservation:
+            messages.error(request, 'You already have an active reservation for this book.')
+            return redirect('books:book_detail', pk=book.id)
+        
+        # Check if there are available copies
+        available_copies = book.book_copies.filter(status='available').count()
+        if available_copies == 0:
+            messages.error(request, 'No copies available for reservation.')
+            return redirect('books:book_detail', pk=book.id)
+        
+        # Create the reservation
+        from library_branches.models import LibraryBranch
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # Get the first available branch (since you don't need more than 1 branch)
+        branch = LibraryBranch.objects.first()
+        if not branch:
+            messages.error(request, 'No library branch available.')
+            return redirect('books:book_detail', pk=book.id)
+        
+        reservation = BookReservation.objects.create(
+            user=request.user,
+            book=book,
+            branch=branch,
+            reservation_type='regular',
+            status='active',
+            expires_at=timezone.now() + timedelta(days=7)  # 7 days to pick up
+        )
+        
+        messages.success(request, f'Book "{book.title}" has been reserved successfully!')
+        return redirect('books:reservation_list')
 
 class ReservationListView(LoginRequiredMixin, ListView):
     model = BookReservation
@@ -166,8 +209,20 @@ class ReservationListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         return BookReservation.objects.filter(user=self.request.user)
 
-class ReservationCancelView(LoginRequiredMixin, TemplateView):
-    template_name = 'books/reservation_cancel.html'
+class ReservationCancelView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        try:
+            reservation = get_object_or_404(BookReservation, pk=pk, user=request.user)
+            if reservation.status == 'active':
+                reservation.status = 'cancelled'
+                reservation.save()
+                messages.success(request, f'Reservation for "{reservation.book.title}" has been cancelled.')
+            else:
+                messages.error(request, 'This reservation cannot be cancelled.')
+        except BookReservation.DoesNotExist:
+            messages.error(request, 'Reservation not found.')
+        
+        return redirect('books:reservation_list')
 
 class AuthorListView(ListView):
     model = Author
