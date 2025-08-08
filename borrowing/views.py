@@ -33,7 +33,7 @@ class BorrowingDashboardView(LoginRequiredMixin, TemplateView):
         
         # Available books
         context['available_books'] = BookCopy.objects.filter(
-            is_active=True, status='available'
+            status='available'
         ).count()
         
         # Recent borrowings (last 5)
