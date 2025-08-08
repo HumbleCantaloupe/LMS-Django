@@ -43,7 +43,3 @@ A Django-based Library Management System for managing books, members, borrowing,
 4. **Access application**
    - Main app: http://127.0.0.1:8000/
    - Admin panel: http://127.0.0.1:8000/admin/
-
-## License
-
-MIT License
