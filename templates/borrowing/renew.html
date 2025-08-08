@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Renew Book - Library Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .renew-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .book-info {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .book-cover {
+        width: 100px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+    .renewal-form {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+    }
+    .btn-renew {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+    .btn-renew:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+        color: white;
+    }
+    .btn-cancel {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 16px;
+        text-decoration: none;
+        margin-left: 10px;
+    }
+    .btn-cancel:hover {
+        background-color: #5a6268;
+        border-color: #545b62;
+        color: white;
+        text-decoration: none;
+    }
+    .due-date-info {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 4px;
+        padding: 10px;
+        margin: 10px 0;
+    }
+    .overdue-warning {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 4px;
+        padding: 10px;
+        margin: 10px 0;
+        color: #721c24;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="renew-container">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-redo-alt me-2"></i>
+                Renew Book
+            </h2>
+            
+            {% if error %}
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {{ error }}
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{% url 'borrowing:current' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Back to Current Borrowings
+                    </a>
+                </div>
+            {% else %}
+                <!-- Book Information -->
+                <div class="book-info">
+                    <div class="row">
+                        <div class="col-md-2">
+                            {% if transaction.book_copy.book.cover_image %}
+                                <img src="{{ transaction.book_copy.book.cover_image.url }}" 
+                                     alt="{{ transaction.book_copy.book.title }}" 
+                                     class="book-cover">
+                            {% else %}
+                                <div class="book-cover bg-light d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-book fa-2x text-muted"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-10">
+                            <h4>{{ transaction.book_copy.book.title }}</h4>
+                            <p class="text-muted mb-2">
+                                by {% for author in transaction.book_copy.book.authors.all %}
+                                    {{ author.get_full_name }}{% if not forloop.last %}, {% endif %}
+                                {% empty %}
+                                    Unknown Author
+                                {% endfor %}
+                            </p>
+                            <p><strong>ISBN:</strong> {{ transaction.book_copy.book.isbn|default:"N/A" }}</p>
+                            <p><strong>Copy ID:</strong> {{ transaction.book_copy.copy_number }}</p>
+                            <p><strong>Branch:</strong> {{ transaction.book_copy.branch.name }}</p>
+                            <p><strong>Borrowed Date:</strong> {{ transaction.borrowed_at|date:"F d, Y" }}</p>
+                            
+                            <!-- Current Due Date -->
+                            {% now "Y-m-d" as today %}
+                            {% if transaction.due_date|date:"Y-m-d" < today %}
+                                <div class="overdue-warning">
+                                    <strong><i class="fas fa-exclamation-triangle me-2"></i>OVERDUE:</strong> 
+                                    This book was due on {{ transaction.due_date|date:"F d, Y" }}
+                                </div>
+                            {% else %}
+                                <div class="due-date-info">
+                                    <strong>Current Due Date:</strong> {{ transaction.due_date|date:"F d, Y" }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Renewal Form -->
+                <div class="renewal-form">
+                    <h5 class="mb-3">Renewal Information</h5>
+                    
+                    {% if can_renew %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="transaction_id" value="{{ transaction.id }}">
+                            
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <strong>New Due Date:</strong>
+                                </label>
+                                <p class="form-control-plaintext">
+                                    {{ new_due_date|date:"F d, Y" }}
+                                    <small class="text-muted">(+14 days from today)</small>
+                                </p>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="confirm_renewal" required>
+                                    <label class="form-check-label" for="confirm_renewal">
+                                        I confirm that I want to renew this book for an additional 14 days.
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Note:</strong> Books can typically be renewed up to 2 times, provided no other user has reserved the book.
+                            </div>
+                            
+                            <div class="d-flex justify-content-start">
+                                <button type="submit" class="btn btn-renew">
+                                    <i class="fas fa-redo-alt me-2"></i>
+                                    Renew Book
+                                </button>
+                                <a href="{% url 'borrowing:current' %}" class="btn-cancel">
+                                    <i class="fas fa-times me-2"></i>
+                                    Cancel
+                                </a>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Cannot Renew:</strong> {{ renewal_error|default:"This book cannot be renewed at this time." }}
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <a href="{% url 'borrowing:current' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Back to Current Borrowings
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-focus on confirmation checkbox when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkbox = document.getElementById('confirm_renewal');
+        if (checkbox) {
+            checkbox.focus();
+        }
+    });
+</script>
+{% endblock %}

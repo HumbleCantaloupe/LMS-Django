@@ -30,22 +30,63 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted mb-4">
-                        Select the books you want to return from your current borrowings.
-                    </p>
-                    
-                    <!-- This would typically be populated by the view context -->
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Please visit <a href="{% url 'borrowing:current' %}" class="alert-link">Current Borrowings</a> to see your borrowed books and return them individually.
-                    </div>
-                    
-                    <div class="text-center mt-4">
-                        <a href="{% url 'borrowing:current' %}" class="btn btn-primary btn-lg">
-                            <i class="fas fa-list me-2"></i>
-                            View Current Borrowings
-                        </a>
-                    </div>
+                    {% if active_transactions %}
+                        <p class="text-muted mb-4">
+                            Select the books you want to return from your current borrowings.
+                        </p>
+                        
+                        <div class="row">
+                            {% for transaction in active_transactions %}
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="card h-100 {% if transaction.is_overdue %}border-danger{% elif transaction.days_until_due <= 3 %}border-warning{% endif %}">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ transaction.book_copy.book.title }}</h6>
+                                        <p class="card-text small">
+                                            <strong>Author(s):</strong>
+                                            {% for author in transaction.book_copy.book.authors.all %}
+                                                {{ author.first_name }} {{ author.last_name }}{% if not forloop.last %}, {% endif %}
+                                            {% empty %}
+                                                Unknown
+                                            {% endfor %}
+                                        </p>
+                                        <p class="card-text small">
+                                            <strong>Borrowed:</strong> {{ transaction.borrow_date|date:"M d, Y" }}
+                                        </p>
+                                        <p class="card-text small">
+                                            <strong>Due Date:</strong> 
+                                            <span class="{% if transaction.is_overdue %}text-danger{% elif transaction.days_until_due <= 3 %}text-warning{% endif %}">
+                                                {{ transaction.due_date|date:"M d, Y" }}
+                                            </span>
+                                        </p>
+                                        {% if transaction.is_overdue %}
+                                            <p class="card-text small text-danger">
+                                                <strong>Overdue by:</strong> {{ transaction.days_overdue }} day{{ transaction.days_overdue|pluralize }}
+                                            </p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-footer">
+                                        <a href="{% url 'borrowing:return_confirmation' transaction.id %}" class="btn btn-success btn-sm w-100">
+                                            <i class="fas fa-undo me-1"></i>
+                                            Return This Book
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            You don't have any books to return at the moment.
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <a href="{% url 'borrowing:browse_books' %}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-book me-2"></i>
+                                Browse Books to Borrow
+                            </a>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

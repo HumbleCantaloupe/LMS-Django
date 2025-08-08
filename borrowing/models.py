@@ -69,12 +69,6 @@ class BorrowTransaction(models.Model):
         return self.borrowed_at.date() if self.borrowed_at else None
     
     @property
-    def days_overdue(self):
-        if not self.is_overdue:
-            return 0
-        return (timezone.now().date() - self.due_date.date()).days
-    
-    @property
     def can_renew(self):
         return (self.status == 'active' and 
                 self.renewal_count < self.max_renewals_allowed and 

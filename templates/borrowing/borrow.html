@@ -42,7 +42,7 @@
                             <div class="col-md-9">
                                 <h4>{{ book_copy.book.title }}</h4>
                                 <p class="text-muted mb-2">
-                                    <strong>Author(s):</strong> {{ book_copy.book.author_names }}
+                                    <strong>Author(s):</strong> {{ book_copy.book.author_list }}
                                 </p>
                                 <p class="text-muted mb-2">
                                     <strong>ISBN:</strong> {{ book_copy.book.isbn }}
@@ -68,11 +68,101 @@
                         </div>
                     </div>
                 </div>
+            {% elif book %}
+                <!-- Specific Book - Show Available Copies -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-book me-2"></i>{{ book.title }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                {% if book.cover_image %}
+                                    <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="img-fluid rounded">
+                                {% else %}
+                                    <div class="bg-light d-flex align-items-center justify-content-center rounded" style="height: 200px;">
+                                        <i class="bi bi-book text-muted" style="font-size: 3rem;"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-9">
+                                <p class="text-muted mb-2">
+                                    <strong>Author(s):</strong> {{ book.author_list }}
+                                </p>
+                                <p class="text-muted mb-2">
+                                    <strong>ISBN:</strong> {{ book.isbn }}
+                                </p>
+                                {% if book.description %}
+                                <p class="text-muted mb-3">{{ book.description|truncatewords:30 }}</p>
+                                {% endif %}
+                                
+                                <a href="{% url 'books:book_detail' book.id %}" class="btn btn-outline-secondary me-2">
+                                    <i class="bi bi-eye me-1"></i>View Full Details
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <h6 class="border-bottom pb-2 mb-3">Available Copies</h6>
+                        
+                        {% if available_copies %}
+                            {% if available_copies.count == 1 %}
+                                <!-- Single copy - show borrow button directly -->
+                                {% for copy in available_copies %}
+                                <div class="alert alert-success">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>Copy {{ copy.copy_number }}</strong> - {{ copy.branch.name }}
+                                            {% if copy.section %}({{ copy.section.name }}){% endif %}
+                                        </div>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="book_id" value="{{ book.id }}">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="bi bi-download me-1"></i>Borrow This Book
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <!-- Multiple copies - let user choose -->
+                                <div class="row">
+                                    {% for copy in available_copies %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6 class="card-title">Copy {{ copy.copy_number }}</h6>
+                                                <p class="card-text small">
+                                                    <strong>Branch:</strong> {{ copy.branch.name }}<br>
+                                                    {% if copy.section %}<strong>Section:</strong> {{ copy.section.name }}<br>{% endif %}
+                                                    <strong>Condition:</strong> {{ copy.get_condition_display }}
+                                                </p>
+                                                <a href="?book_copy_id={{ copy.id }}" class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-arrow-right me-1"></i>Borrow This Copy
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="alert alert-warning text-center">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                No copies of this book are currently available for borrowing.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
             {% else %}
-                <!-- Available Books List -->
+                <!-- Browse All Available Books -->
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">Available Books for Borrowing</h5>
+                        <h5 class="mb-0">
+                            <i class="bi bi-book-half me-2"></i>Available Books for Borrowing
+                        </h5>
                     </div>
                     <div class="card-body">
                         {% if available_copies %}
@@ -83,7 +173,7 @@
                                         <div class="card-body">
                                             <h6 class="card-title">{{ copy.book.title }}</h6>
                                             <p class="card-text small text-muted mb-2">
-                                                {{ copy.book.author_names }}
+                                                {{ copy.book.author_list }}
                                             </p>
                                             <p class="card-text small">
                                                 <strong>Copy:</strong> {{ copy.copy_number }}<br>
@@ -101,6 +191,12 @@
                                     </div>
                                 </div>
                                 {% endfor %}
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <a href="{% url 'borrowing:browse_books' %}" class="btn btn-outline-primary">
+                                    <i class="bi bi-search me-2"></i>Browse More Books
+                                </a>
                             </div>
                         {% else %}
                             <div class="text-center py-4">
