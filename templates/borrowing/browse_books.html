@@ -79,7 +79,7 @@
                         <strong>Category:</strong> {{ book.category.name }}<br>
                         {% endif %}
                         <strong>Available Copies:</strong> 
-                        <span class="badge bg-success">{{ book.available_copies }}</span>
+                        <span class="badge bg-success">{{ book.available_copies_count }}</span>
                     </p>
                     
                     {% if book.description %}
@@ -95,8 +95,8 @@
                     {% endif %}
                     
                     <div class="mt-auto">
-                        {% if book.available_copies > 0 %}
-                        <a href="{% url 'borrowing:borrow_book' book.id %}" class="btn btn-primary btn-sm">
+                        {% if book.available_copies_count > 0 %}
+                        <a href="{% url 'borrowing:borrow' %}?book={{ book.id }}" class="btn btn-primary btn-sm">
                             <i class="fas fa-book-open me-1"></i>Borrow Book
                         </a>
                         {% else %}
@@ -148,7 +148,7 @@
                                     {% if book.category %}
                                     <tr><td><strong>Category:</strong></td><td>{{ book.category.name }}</td></tr>
                                     {% endif %}
-                                    <tr><td><strong>Available Copies:</strong></td><td><span class="badge bg-success">{{ book.available_copies }}</span></td></tr>
+                                    <tr><td><strong>Available Copies:</strong></td><td><span class="badge bg-success">{{ book.available_copies_count }}</span></td></tr>
                                 </table>
                                 
                                 {% if book.description %}
@@ -162,8 +162,8 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        {% if book.available_copies > 0 %}
-                        <a href="{% url 'borrowing:borrow_book' book.id %}" class="btn btn-primary">
+                        {% if book.available_copies_count > 0 %}
+                        <a href="{% url 'borrowing:borrow' %}?book={{ book.id }}" class="btn btn-primary">
                             <i class="fas fa-book-open me-1"></i>Borrow This Book
                         </a>
                         {% endif %}
