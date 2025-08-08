@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Fines - Library Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2 mb-0">
+                    <i class="bi bi-receipt text-warning me-2"></i>
+                    My Fines
+                </h1>
+                <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card border-warning">
+                        <div class="card-body text-center">
+                            <i class="bi bi-receipt-cutoff text-warning" style="font-size: 2rem;"></i>
+                            <h4 class="mt-2 mb-1">${{ total_fines|floatformat:2 }}</h4>
+                            <small class="text-muted">Total Fines</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-success">
+                        <div class="card-body text-center">
+                            <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                            <h4 class="mt-2 mb-1">${{ paid_fines|floatformat:2 }}</h4>
+                            <small class="text-muted">Paid Fines</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-danger">
+                        <div class="card-body text-center">
+                            <i class="bi bi-exclamation-circle text-danger" style="font-size: 2rem;"></i>
+                            <h4 class="mt-2 mb-1">${{ pending_fines|floatformat:2 }}</h4>
+                            <small class="text-muted">Pending Fines</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fines List -->
+            {% if fines %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Fine History</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Fine Type</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Issued Date</th>
+                                        <th>Due Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for fine in fines %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ fine.fine_type.name }}</strong>
+                                            {% if fine.description %}
+                                                <br><small class="text-muted">{{ fine.description|truncatechars:50 }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold">${{ fine.amount|floatformat:2 }}</span>
+                                            {% if fine.amount_paid > 0 %}
+                                                <br><small class="text-success">Paid: ${{ fine.amount_paid|floatformat:2 }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if fine.status == 'paid' %}
+                                                <span class="badge bg-success">Paid</span>
+                                            {% elif fine.status == 'pending' %}
+                                                <span class="badge bg-warning">Pending</span>
+                                            {% elif fine.status == 'waived' %}
+                                                <span class="badge bg-info">Waived</span>
+                                            {% elif fine.status == 'overdue' %}
+                                                <span class="badge bg-danger">Overdue</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ fine.get_status_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ fine.issued_date|date:"M d, Y" }}</td>
+                                        <td>{{ fine.due_date|date:"M d, Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'fines:fine_detail' fine.pk %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                            {% if fine.status == 'pending' %}
+                                                <a href="{% url 'fines:pay' fine.pk %}" class="btn btn-sm btn-success">
+                                                    <i class="bi bi-credit-card"></i> Pay
+                                                </a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                    <nav aria-label="Fines pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                        <i class="bi bi-chevron-left"></i> Previous
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                        Next <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4 class="text-muted">No Fines Found</h4>
+                    <p class="text-muted">You currently have no fines. Keep up the good work!</p>
+                    <a href="{% url 'books:book_list' %}" class="btn btn-primary">
+                        <i class="bi bi-book me-2"></i>Browse Books
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
